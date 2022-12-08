@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Large Folders
+manoeverkarten/
+ilaris/
+test/
+
+# Private Data Folders
+gruppen/
