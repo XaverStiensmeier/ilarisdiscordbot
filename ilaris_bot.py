@@ -16,6 +16,7 @@ intents = discord.Intents().all()
 # Create bot
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+
 # Startup Information
 @bot.event
 async def on_ready():
@@ -23,6 +24,6 @@ async def on_ready():
     print('Bot ID: {}'.format(bot.user.id))
     await bot.add_cog(GeneralCommands(bot))
     await bot.add_cog(GroupCommands(bot))
-    
+
 
 bot.run(token, log_handler=handler)

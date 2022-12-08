@@ -4,6 +4,7 @@ from discord.ext import commands
 from cogs.general import ilaris_database
 from cogs.general import parse_die
 
+
 class GeneralCommands(commands.Cog):
     """
     Commands for handling general stuff

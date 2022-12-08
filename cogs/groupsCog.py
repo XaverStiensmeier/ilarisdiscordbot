@@ -2,6 +2,7 @@
 from discord.ext import commands
 from cogs.group import organize_group
 
+
 class GroupCommands(commands.Cog):
     """
     Commands for handling groups
