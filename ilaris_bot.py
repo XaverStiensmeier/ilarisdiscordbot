@@ -26,4 +26,4 @@ async def on_ready():
     await bot.add_cog(GroupCommands(bot))
 
 
-bot.run(token, log_handler=handler)
+bot.run(token) #, log_handler=handler
