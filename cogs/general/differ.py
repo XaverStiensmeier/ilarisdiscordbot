@@ -5,7 +5,7 @@ import difflib
 def closest_match(name, name_list):
     three_best = None
     if name in name_list:
-        return name
+        return name, None
     else:
         short_names = [key[:len(name)] for key in name_list]
         three_best = get_close_matches(name, short_names)
@@ -13,6 +13,7 @@ def closest_match(name, name_list):
             three_best = [list(name_list)[index] for index, best in three_best]
             name = three_best[0]
             return name, three_best
+    return None, None
 
 
 def get_close_matches(word, possibilities, n=3, cutoff=0.6):

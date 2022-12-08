@@ -20,7 +20,7 @@ def get_database_entry(name):
     else:
         return f"{name} nicht gefunden..."
 
-    result_str += f"**--- {name} ---**\n"
+    result_str += f"**--- {result_name} ---**\n"
     # Prepare print
     for key, value in result.items():
         if value == 0 or value:

@@ -34,9 +34,8 @@ class GeneralCommands(commands.Cog):
             await ctx.send(ilaris_database.get_database_entry(name=arg))
 
     @commands.command(help="Posts an image of the given rulecard.")
-    async def rulecard(self, ctx, arg: str = commands.parameter(
+    async def card(self, ctx, arg: str = commands.parameter(
         description="Name of rule card")):
-        print(len(cards))
         name, three_best = differ.closest_match(arg, cards)
         if name:
             await ctx.send(file=discord.File(basic_paths.rjoin(f"manoeverkarten/{name}.png")))
