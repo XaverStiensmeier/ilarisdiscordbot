@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 import discord
 from discord.ext import commands
-from test import ilaris_database
-from test import parse_die
-
-print("Test")
+from cogs.general import ilaris_database
+from cogs.general import parse_die
 
 class GeneralCommands(commands.Cog):
     """

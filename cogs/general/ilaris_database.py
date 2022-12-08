@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 import difflib
 import yaml
-import operator
+import basic_paths
 
-with open("datenbank/discord.yml") as file:
+with open(basic_paths.rjoin("datenbank/discord.yml")) as file:
     flat_database = yaml.safe_load(file)
 
+
 def get_close_matches(word, possibilities, n=3, cutoff=0.6):
-    """Use SequenceMatcher to return list of the best "good enough" matches.
+    """
+    See difflib
+    Use SequenceMatcher to return list of the best "good enough" matches.
     word is a sequence for which close matches are desired (typically a
     string).
     possibilities is a list of sequences against which to match word
@@ -47,6 +50,7 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     # Strip scores for the best n matches
     return [(index, x) for score, index, x in result][:n]
 
+
 def get_database_entry(name):
     result = None
     result_str = ""
@@ -76,5 +80,5 @@ def get_database_entry(name):
                 for elem in value:
                     result_str+=f"\t- {elem}\n"
             else:
-                result_str+= f" {value}\n"
+                result_str += f" {value}\n"
     return result_str

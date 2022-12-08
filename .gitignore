@@ -129,10 +129,10 @@ dmypy.json
 .pyre/
 
 # Large Folders
-manoeverkarten/
-ilaris/
+resources/manoeverkarten/
+resources/ilaris/
 test/
 
 # Private Data Folders
-gruppen/
+resources/gruppen/
 token

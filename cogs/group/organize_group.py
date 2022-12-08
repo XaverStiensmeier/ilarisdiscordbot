@@ -2,11 +2,16 @@
 # Imports
 import yaml
 import signal
+import sys
+import basic_paths
+
 
 def sigterm_handler(_signo, _stack_frame):
-    with open("gruppen/gruppen.yml", "w+") as yaml_file:
-        yaml.safe_dump(organize_group.gruppen, yaml_file)
+    with open(basic_paths.rjoin("gruppen/gruppen.yml"), "w+") as yaml_file:
+        yaml.safe_dump(gruppen, yaml_file)
     sys.exit(0)
+
+
 signal.signal(signal.SIGINT, sigterm_handler)
 signal.signal(signal.SIGTERM, sigterm_handler)
 
@@ -14,6 +19,7 @@ ALLOWED_KEYS = ["uhrzeit", "spielerzahl", "beschreibung"]
 
 with open("gruppen/gruppen.yml", "r") as yaml_file:
     gruppen = yaml.safe_load(yaml_file) or {}
+
 
 def list_groups(show_full=False):
     return_str = "**- Gruppen Liste -**\n"
@@ -25,11 +31,13 @@ def list_groups(show_full=False):
             return_str+= f"Spielerzahl: ({len(daten['spieler'])}/{daten['spielerzahl']})\n\n"
     return return_str
 
+
 def create_group(gruppe, uhrzeit, spielerzahl=4, beschreibung=""):
     if gruppen.get(gruppe):
         return "Deine Gruppe existiert bereits."
     gruppen[gruppe] = {"uhrzeit": uhrzeit, "spielerzahl":spielerzahl, "beschreibung":beschreibung, "spieler": []}
     return f"Neue Gruppe {gruppe} angelegt."
+
 
 def destroy_group(gruppe):
     if gruppen.get(gruppe):
@@ -37,12 +45,14 @@ def destroy_group(gruppe):
         return "Deine Gruppe wurde gelöscht."
     return "Deine Gruppe existiert nicht."
 
+
 def set_key(gruppe, key, value):
     if gruppen.get(gruppe) and key in ALLOWED_KEYS:
         gruppen[gruppe][key] = value
         return f"{key}: {value} wurde gesetzt"
     else:
         return f"{key} konnte nicht gesetzt werden."
+
 
 def remove_player(gruppe, spieler):
     if gruppen.get(gruppe):
@@ -53,6 +63,7 @@ def remove_player(gruppe, spieler):
             return f"Spieler {spieler} ist nicht in Gruppe {gruppe}."
     else:
         return f"Gruppe {gruppe} existiert nicht."
+
 
 def add_self(gruppe, spieler):
     if gruppen.get(gruppe):
@@ -68,6 +79,7 @@ def add_self(gruppe, spieler):
             return f"Du bist bereits Teil dieser Gruppe."
     else:
         return f"Gruppe {gruppe} existiert nicht."
+
 
 def remove_self(gruppe, spieler):
     if gruppen.get(gruppe):

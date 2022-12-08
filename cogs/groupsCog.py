@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from discord.ext import commands
-from gro import organize_group
+from cogs.group import organize_group
 
 class GroupCommands(commands.Cog):
     """
