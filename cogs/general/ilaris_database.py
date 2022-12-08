@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import difflib
+
 import yaml
+
 import basic_paths
 
 with open(basic_paths.rjoin("datenbank/discord.yml")) as file:
@@ -31,7 +33,7 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     >>> get_close_matches("accept", _keyword.kwlist)
     ['except']
     """
-    if not n >  0:
+    if not n > 0:
         raise ValueError("n must be > 0: %r" % (n,))
     if not 0.0 <= cutoff <= 1.0:
         raise ValueError("cutoff must be in [0.0, 1.0]: %r" % (cutoff,))
@@ -41,8 +43,8 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     for index, x in enumerate(possibilities):
         s.set_seq1(x)
         if s.real_quick_ratio() >= cutoff and \
-           s.quick_ratio() >= cutoff and \
-           s.ratio() >= cutoff:
+                s.quick_ratio() >= cutoff and \
+                s.ratio() >= cutoff:
             result.append((s.ratio(), index, x))
 
     # Move the best scorers to head of list
@@ -64,21 +66,21 @@ def get_database_entry(name):
             three_best = [list(element_full_names)[index] for index, best in three_best]
             name = three_best[0]
             result = flat_database[name]
-            result_str+=f"Die drei besten Matches: {three_best}\n\n"
+            result_str += f"Die drei besten Matches: {three_best}\n\n"
     # key is the last key in the run and result is either None (if none found) or the right one
     if not result:
         return f"{name} nicht gefunden..."
-    
+
     result_str += f"**--- {name} ---**\n"
 
     # Prepare print
     for key, value in result.items():
         if value == 0 or value:
-            result_str+= f"**{key.title()}**:"
+            result_str += f"**{key.title()}**:"
             if isinstance(value, list):
-                result_str+="\n"
+                result_str += "\n"
                 for elem in value:
-                    result_str+=f"\t- {elem}\n"
+                    result_str += f"\t- {elem}\n"
             else:
                 result_str += f" {value}\n"
     return result_str

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # Imports
-import yaml
 import signal
 import sys
+
+import yaml
+
 import basic_paths
 
 
@@ -25,17 +27,17 @@ def list_groups(show_full=False):
     return_str = "**- Gruppen Liste -**\n"
     for gruppe, daten in gruppen.items():
         if show_full or len(daten['spieler']) < daten['spielerzahl']:
-            return_str+= f"**--- {gruppe} ---**\n"
-            return_str+= f"Beschreibung: {daten['beschreibung']}\n"
-            return_str+= f"Uhrzeit: {daten['uhrzeit']}\n"
-            return_str+= f"Spielerzahl: ({len(daten['spieler'])}/{daten['spielerzahl']})\n\n"
+            return_str += f"**--- {gruppe} ---**\n"
+            return_str += f"Beschreibung: {daten['beschreibung']}\n"
+            return_str += f"Uhrzeit: {daten['uhrzeit']}\n"
+            return_str += f"Spielerzahl: ({len(daten['spieler'])}/{daten['spielerzahl']})\n\n"
     return return_str
 
 
 def create_group(gruppe, uhrzeit, spielerzahl=4, beschreibung=""):
     if gruppen.get(gruppe):
         return "Deine Gruppe existiert bereits."
-    gruppen[gruppe] = {"uhrzeit": uhrzeit, "spielerzahl":spielerzahl, "beschreibung":beschreibung, "spieler": []}
+    gruppen[gruppe] = {"uhrzeit": uhrzeit, "spielerzahl": spielerzahl, "beschreibung": beschreibung, "spieler": []}
     return f"Neue Gruppe {gruppe} angelegt."
 
 
