@@ -3,15 +3,12 @@
 import discord
 from discord.ext import commands
 import logging
-import yaml
-import signal
-import sys
+import basic_paths
 from cogs.generalCog import GeneralCommands
 from cogs.groupsCog import GroupCommands
 
-with open("token") as token_file:
+with open(basic_paths.rjoin("token")) as token_file:
     token = token_file.readline()
-print(token)
 
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 # Credentials

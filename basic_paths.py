@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-RESOURCES = Path(__file__).absolute().parents[2]
+RESOURCES = os.path.join(Path(__file__).absolute().parent, "resources")
 
 
 def rjoin(path):

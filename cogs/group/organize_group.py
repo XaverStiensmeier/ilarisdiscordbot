@@ -17,7 +17,7 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 
 ALLOWED_KEYS = ["uhrzeit", "spielerzahl", "beschreibung"]
 
-with open("gruppen/gruppen.yml", "r") as yaml_file:
+with open(basic_paths.rjoin("gruppen/gruppen.yml"), "r") as yaml_file:
     gruppen = yaml.safe_load(yaml_file) or {}
 
 
