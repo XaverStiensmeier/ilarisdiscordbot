@@ -7,4 +7,4 @@ for file in *.pdf ; do
     echo "$file"
     pdftoppm "$file" "${file%????}" -png -singlefile
 done
-rm ./*glob*.pdf
+rm *.pdf
