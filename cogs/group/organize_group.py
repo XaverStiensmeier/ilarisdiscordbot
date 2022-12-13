@@ -36,16 +36,16 @@ def list_groups(show_full=False):
 
 def create_group(gruppe, uhrzeit, spielerzahl=4, beschreibung=""):
     if gruppen.get(gruppe):
-        return "Deine Gruppe existiert bereits."
+        return 0, "Deine Gruppe existiert bereits."
     gruppen[gruppe] = {"uhrzeit": uhrzeit, "spielerzahl": spielerzahl, "beschreibung": beschreibung, "spieler": []}
-    return f"Neue Gruppe {gruppe} angelegt."
+    return 1, f"Neue Gruppe {gruppe} angelegt."
 
 
 def destroy_group(gruppe):
     if gruppen.get(gruppe):
         gruppen.pop(gruppe)
-        return "Deine Gruppe wurde gelöscht."
-    return "Deine Gruppe existiert nicht."
+        return 1, "Deine Gruppe wurde gelöscht."
+    return 0, "Deine Gruppe existiert nicht."
 
 
 def set_key(gruppe, key, value):

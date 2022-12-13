@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import discord
 from discord.ext import commands
-
+from discord.utils import get
 from cogs.group import organize_group
 
 
@@ -21,14 +21,22 @@ class GroupCommands(commands.Cog):
                       description: str = commands.parameter(default="Eine spannende Ilaris Runde!",
                                                             description="Description for your soon-to-be players")):
         group_name = f"{group}_{ctx.author}"
-        result_str = organize_group.create_group(group_name, time, player, description)
+        exit_status, result_str = organize_group.create_group(group_name, time, player, description)
         everyone = ctx.guild.default_role
-        role = await ctx.guild.create_role(name=group_name)
-        print(role.id)
-        overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
-                      role: discord.PermissionOverwrite(read_messages=True)}
-        await ctx.guild.create_text_channel(name=group_name, overwrites=overwrites)
-        #await ctx.guild.create_voice_channel(name=group_name, overwrites=overwrites)
+
+        if exit_status:
+            # create role
+            role = await ctx.guild.create_role(name=group_name)
+            # add role to GM
+            await ctx.author.add_roles(role)
+            # permissions
+            overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
+                          role: discord.PermissionOverwrite(read_messages=True)}
+            # create category
+            category = await ctx.guild.create_category(name=group_name)
+            # create channels
+            await ctx.guild.create_text_channel(name=group_name, overwrites=overwrites, category=category)
+            await ctx.guild.create_voice_channel(name=group_name, overwrites=overwrites, category=category)
         await ctx.send(result_str)
 
     @commands.command(help="List all groups")
@@ -40,7 +48,8 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Destroys a group that you've created")
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = f"{group_prefix}_{ctx.author}"
-        result_str = organize_group.destroy_group(group_name)
+        exit_status, result_str = organize_group.destroy_group(group_name)
+        # if exit_status, delete channels and role
         await ctx.send(result_str)
 
     @commands.command(
