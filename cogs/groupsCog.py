@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import discord
 from discord.ext import commands
 
 from cogs.group import organize_group
@@ -21,6 +22,13 @@ class GroupCommands(commands.Cog):
                                                             description="Description for your soon-to-be players")):
         group_name = f"{group}_{ctx.author}"
         result_str = organize_group.create_group(group_name, time, player, description)
+        everyone = ctx.guild.default_role
+        role = await ctx.guild.create_role(name=group_name)
+        print(role.id)
+        overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
+                      role: discord.PermissionOverwrite(read_messages=True)}
+        await ctx.guild.create_text_channel(name=group_name, overwrites=overwrites)
+        #await ctx.guild.create_voice_channel(name=group_name, overwrites=overwrites)
         await ctx.send(result_str)
 
     @commands.command(help="List all groups")
