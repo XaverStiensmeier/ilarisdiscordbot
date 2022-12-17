@@ -17,11 +17,13 @@ class GroupCommands(commands.Cog):
     async def gcreate(self, ctx, group: str = commands.parameter(description="Your group to create"),
                       time: str = commands.parameter(
                           description="Time to play in GMT+1 (for example '25.02.23 14:00')"),
-                      player: int = commands.parameter(default=4, description="Maximum number of players"),
+                      player: int = commands.parameter(
+                          default=4, description="Maximum number of players"),
                       description: str = commands.parameter(default="Eine spannende Ilaris Runde!",
                                                             description="Description for your soon-to-be players")):
         group_name = f"{group}_{ctx.author}"
-        exit_status, result_str = organize_group.create_group(group_name, time, player, description)
+        exit_status, result_str = organize_group.create_group(
+            group_name, time, player, description)
         everyone = ctx.guild.default_role
 
         if exit_status:
@@ -55,7 +57,8 @@ class GroupCommands(commands.Cog):
     @commands.command(
         help="Sets a group key like 'uhrzeit'. Setting 'spieler' below the current number will not remove any players.")
     async def gset(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)"),
-                   key: str = commands.parameter(description="Key to set (for example 'uhrzeit')"),
+                   key: str = commands.parameter(
+                       description="Key to set (for example 'uhrzeit')"),
                    value: str = commands.parameter(
                        description="Value to store under key (for example '25.02.23 14:00')")):
         group = f"{group_prefix}_{ctx.author}"
@@ -72,6 +75,11 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Join a group as a player")
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
         result_str = organize_group.add_self(group, ctx.author)
+
+        # get the role by group name
+        group_role = get(ctx.guild.roles, name=group)
+
+        await ctx.author.add_roles(group_role)
         await ctx.send(result_str)
 
     @commands.command(help="Leave a group as a player")
