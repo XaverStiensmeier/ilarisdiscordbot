@@ -66,10 +66,18 @@ class GroupCommands(commands.Cog):
         await ctx.send(result_str)
 
     @commands.command(help="Removes a player from your group")
-    async def remove_player(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
+    async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
                             player: str = commands.parameter(description="Player to remove.")):
         group = f"{group_prefix}_{ctx.author}"
-        result_str = organize_group.remove_player(group, player)
+        status, result_str = organize_group.remove_player(group, player)
+
+        if status:
+            group_role = get(ctx.guild.roles, name=group)
+            # removing group role when existing
+            user_roles = ctx.author.roles
+            if group_role in user_roles:
+                await ctx.author.remove_roles(group_role)
+
         await ctx.send(result_str)
 
     @commands.command(help="Join a group as a player")

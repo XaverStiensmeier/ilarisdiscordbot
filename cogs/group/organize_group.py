@@ -60,11 +60,11 @@ def remove_player(gruppe, spieler):
     if gruppen.get(gruppe):
         if spieler in gruppen[gruppe]["spieler"]:
             gruppen[gruppe]["spieler"].remove(spieler)
-            return f"Spieler {spieler} wurde entfernt."
+            return True, f"Spieler {spieler} wurde entfernt."
         else:
-            return f"Spieler {spieler} ist nicht in Gruppe {gruppe}."
+            return False, f"Spieler {spieler} ist nicht in Gruppe {gruppe}."
     else:
-        return f"Gruppe {gruppe} existiert nicht."
+        return False, f"Gruppe {gruppe} existiert nicht."
 
 
 def add_self(gruppe, spieler):
