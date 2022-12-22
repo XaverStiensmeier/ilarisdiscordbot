@@ -75,6 +75,11 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Join a group as a player")
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
         result_str = organize_group.add_self(group, ctx.author)
+
+        # get the role by group name
+        group_role = get(ctx.guild.roles, name=group)
+
+        await ctx.author.add_roles(group_role)
         await ctx.send(result_str)
 
     @commands.command(help="Leave a group as a player")
