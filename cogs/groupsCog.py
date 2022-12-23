@@ -51,7 +51,15 @@ class GroupCommands(commands.Cog):
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = f"{group_prefix}_{ctx.author}"
         status, result_str = organize_group.destroy_group(group_name)
-        # if exit_status, delete channels and role
+
+        # if status, delete channels and role
+        if status:
+            # create category
+            category = await ctx.guild.create_category(name=group_name)
+            # create channels
+            await ctx.guild.create_text_channel(name=group_name, overwrites=overwrites, category=category)
+            await ctx.guild.create_voice_channel(name=group_name, overwrites=overwrites, category=category)
+
         await ctx.send(result_str)
 
     @commands.command(
