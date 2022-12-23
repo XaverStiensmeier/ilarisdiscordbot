@@ -22,11 +22,11 @@ class GroupCommands(commands.Cog):
                       description: str = commands.parameter(default="Eine spannende Ilaris Runde!",
                                                             description="Description for your soon-to-be players")):
         group_name = f"{group}_{ctx.author}"
-        exit_status, result_str = organize_group.create_group(
+        status, result_str = organize_group.create_group(
             group_name, time, player, description)
         everyone = ctx.guild.default_role
 
-        if exit_status:
+        if status:
             # create role
             role = await ctx.guild.create_role(name=group_name)
             # add role to GM
@@ -50,7 +50,7 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Destroys a group that you've created")
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = f"{group_prefix}_{ctx.author}"
-        exit_status, result_str = organize_group.destroy_group(group_name)
+        status, result_str = organize_group.destroy_group(group_name)
         # if exit_status, delete channels and role
         await ctx.send(result_str)
 
@@ -82,23 +82,24 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Join a group as a player")
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
-        result_str = organize_group.add_self(group, ctx.author)
+        status, result_str = organize_group.add_self(group, ctx.author)
 
-        # get the role by group name
-        group_role = get(ctx.guild.roles, name=group)
+        if status:
+            # get the role by group name
+            group_role = get(ctx.guild.roles, name=group)
+            await ctx.author.add_roles(group_role)
 
-        await ctx.author.add_roles(group_role)
         await ctx.send(result_str)
 
     @commands.command(help="Leave a group as a player")
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
+        status, result_str = organize_group.remove_self(group, ctx.author)
 
-        group_role = get(ctx.guild.roles, name=group)
+        if status:
+            group_role = get(ctx.guild.roles, name=group)
+            # removing group role when existing
+            user_roles = ctx.author.roles
+            if group_role in user_roles:  # only remove if role really exists
+                await ctx.author.remove_roles(group_role)
 
-        # removing group role when existing
-        user_roles = ctx.author.roles
-        if group_role in user_roles:
-            await ctx.author.remove_roles(group_role)
-
-        result_str = organize_group.remove_self(group, ctx.author)
         await ctx.send(result_str)

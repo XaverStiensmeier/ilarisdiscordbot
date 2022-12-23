@@ -38,14 +38,14 @@ def create_group(gruppe, uhrzeit, spielerzahl=4, beschreibung=""):
     if gruppen.get(gruppe):
         return 0, "Deine Gruppe existiert bereits."
     gruppen[gruppe] = {"uhrzeit": uhrzeit, "spielerzahl": spielerzahl, "beschreibung": beschreibung, "spieler": []}
-    return 1, f"Neue Gruppe {gruppe} angelegt."
+    return True, f"Neue Gruppe {gruppe} angelegt."
 
 
 def destroy_group(gruppe):
     if gruppen.get(gruppe):
         gruppen.pop(gruppe)
         return 1, "Deine Gruppe wurde gelöscht."
-    return 0, "Deine Gruppe existiert nicht."
+    return False, "Deine Gruppe existiert nicht."
 
 
 def set_key(gruppe, key, value):
@@ -74,21 +74,21 @@ def add_self(gruppe, spieler):
             maximal_anzahl = gruppen[gruppe]["spielerzahl"]
             if aktuelle_anzahl < maximal_anzahl:
                 gruppen[gruppe]["spieler"].append(spieler)
-                return f"Du wurdest Gruppe {gruppe} hinzugefügt."
+                return True, f"Du wurdest Gruppe {gruppe} hinzugefügt."
             else:
-                return f"Gruppe {gruppe} ist bereits voll: {aktuelle_anzahl}/{maximal_anzahl}"
+                return False, f"Gruppe {gruppe} ist bereits voll: {aktuelle_anzahl}/{maximal_anzahl}"
         else:
-            return f"Du bist bereits Teil dieser Gruppe."
+            return False, f"Du bist bereits Teil der Gruppe {gruppe}."
     else:
-        return f"Gruppe {gruppe} existiert nicht."
+        return False, f"Gruppe {gruppe} existiert nicht."
 
 
 def remove_self(gruppe, spieler):
     if gruppen.get(gruppe):
         if spieler in gruppen[gruppe]["spieler"]:
             gruppen[gruppe]["spieler"].remove(spieler)
-            return f"Du wurdest aus Gruppe {gruppe} entfernt."
+            return True, f"Du wurdest aus Gruppe {gruppe} entfernt."
         else:
-            return f"Du bist bereits nicht Teil der Gruppe {gruppe}."
+            return False, f"Du bist kein Spieler der Gruppe {gruppe}."
     else:
-        return f"Gruppe {gruppe} existiert nicht."
+        return False, f"Gruppe {gruppe} existiert nicht."
