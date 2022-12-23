@@ -56,9 +56,12 @@ class GroupCommands(commands.Cog):
         if status:
             # create category
             category = await ctx.guild.create_category(name=group_name)
-            # create channels
-            await ctx.guild.create_text_channel(name=group_name, overwrites=overwrites, category=category)
-            await ctx.guild.create_voice_channel(name=group_name, overwrites=overwrites, category=category)
+            # remove channels
+            existing_channel = discord.utils.get(ctx.guild.channels, name=group_name)
+            print(existing_channel)
+            # if the channel exists
+            #if existing_channel is not None:
+            #    await existing_channel.delete()
 
         await ctx.send(result_str)
 
