@@ -82,7 +82,7 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Join a group as a player")
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
-        status, result_str = organize_group.add_self(group, ctx.author)
+        status, result_str = organize_group.add_self(group, str(ctx.author))
 
         if status:
             # get the role by group name
@@ -93,7 +93,7 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Leave a group as a player")
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
-        status, result_str = organize_group.remove_self(group, ctx.author)
+        status, result_str = organize_group.remove_self(group, str(ctx.author))
 
         if status:
             group_role = get(ctx.guild.roles, name=group)
