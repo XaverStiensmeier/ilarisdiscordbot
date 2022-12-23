@@ -26,4 +26,16 @@ async def on_ready():
     await bot.add_cog(GroupCommands(bot))
 
 
-bot.run(token) #, log_handler=handler
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(f"Command not found. See `!help` for all commands.")
+    if isinstance(error, commands.BadArgument):
+        usage = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
+        await ctx.send(f"Failed converting an argument\nCorrect usage: {usage}")
+    elif isinstance(error, Exception):
+        help = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
+        await ctx.send(f"Command Execution failed\n{help}")
+
+
+bot.run(token)  # , log_handler=handler
