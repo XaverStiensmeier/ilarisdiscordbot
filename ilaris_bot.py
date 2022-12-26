@@ -41,10 +41,10 @@ async def on_command_error(ctx, error):
         await ctx.send(f"Failed converting an argument\nCorrect usage: {usage}")
     elif isinstance(error, Exception):
         if ctx.command:
-            help = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
+            info = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
         else:
-            help = "Unexpected Error."
-        await ctx.send(f"Command Execution failed\n{help}")
+            info = "Unexpected Error."
+        await ctx.send(f"Command Execution failed\n{info}")
 
 
 @bot.event
