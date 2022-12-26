@@ -38,4 +38,12 @@ async def on_command_error(ctx, error):
         await ctx.send(f"Command Execution failed\n{help}")
 
 
+@commands.Cog.listener(name='on_command')
+async def log(self, ctx):
+    server = ctx.guild.name
+    user = ctx.author
+    command = ctx.command
+    logging.info(f'{server} > {user} > {command}')
+
+
 bot.run(token)  # , log_handler=handler
