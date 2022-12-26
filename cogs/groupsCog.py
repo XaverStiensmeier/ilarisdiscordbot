@@ -51,17 +51,23 @@ class GroupCommands(commands.Cog):
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = f"{group_prefix}_{ctx.author}"
         status, result_str = organize_group.destroy_group(group_name)
-
         # if status, delete channels and role
+        status=True
         if status:
-            # create category
-            category = await ctx.guild.create_category(name=group_name)
+            # remove role
+            role = discord.utils.get(ctx.guild.roles, name=group_name)
+            if role:
+                await role.delete()
+
+            # remove category
+            category = discord.utils.get(ctx.guild.categories, name=group_name)
+            if category:
+                await category.delete()
             # remove channels
-            existing_channel = discord.utils.get(ctx.guild.channels, name=group_name)
-            print(existing_channel)
-            # if the channel exists
-            #if existing_channel is not None:
-            #    await existing_channel.delete()
+            for channel in ctx.guild.channels:
+                if str(channel) == group_name or str(channel) == group_name.replace("#", "").lower():
+                    print("Deleting", channel)
+                    await channel.delete()
 
         await ctx.send(result_str)
 
