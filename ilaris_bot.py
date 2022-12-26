@@ -11,6 +11,12 @@ with open(basic_paths.rjoin("token")) as token_file:
     token = token_file.readline()
 
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+logging.basicConfig(
+    filename='discord.log',
+    level=logging.DEBUG,
+    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
 # Credentials
 intents = discord.Intents().all()
 # Create bot
@@ -34,16 +40,19 @@ async def on_command_error(ctx, error):
         usage = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
         await ctx.send(f"Failed converting an argument\nCorrect usage: {usage}")
     elif isinstance(error, Exception):
-        help = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
+        if ctx.command:
+            help = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
+        else:
+            help = "Unexpected Error."
         await ctx.send(f"Command Execution failed\n{help}")
 
 
-@commands.Cog.listener(name='on_command')
-async def log(self, ctx):
+@bot.event
+async def on_command(ctx):
     server = ctx.guild.name
     user = ctx.author
     command = ctx.command
-    logging.info(f'{server} > {user} > {command}')
+    logging.info("'{}' used '{}' in '{}'".format(user, command, server))
 
 
 bot.run(token)  # , log_handler=handler
