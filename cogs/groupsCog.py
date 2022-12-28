@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import discord
+import logging
 from discord.ext import commands
 from discord.utils import get
 from cogs.group import organize_group
@@ -58,16 +59,18 @@ class GroupCommands(commands.Cog):
             role = discord.utils.get(ctx.guild.roles, name=group_name)
             if role:
                 await role.delete()
+                logging.debug(f"Deleted role {role}.")
 
             # remove category
             category = discord.utils.get(ctx.guild.categories, name=group_name)
             if category:
                 await category.delete()
+                logging.debug(f"Deleted category {category}.")
             # remove channels
             for channel in ctx.guild.channels:
                 if str(channel) == group_name or str(channel) == group_name.replace("#", "").lower():
-                    print("Deleting", channel)
                     await channel.delete()
+                    logging.debug(f"Deleted channel {channel}.")
 
         await ctx.send(result_str)
 
