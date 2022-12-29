@@ -14,7 +14,7 @@ class GroupCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(help="Creates a new group with yourself as the GM")
+    @commands.command(help="Creates a new group with yourself as the GM", aliases=['gneu'])
     async def gcreate(self, ctx, group: str = commands.parameter(description="Your group to create"),
                       time: str = commands.parameter(
                           description="Time to play in GMT+1 (for example '25.02.23 14:00')"),
@@ -51,13 +51,13 @@ class GroupCommands(commands.Cog):
             logging.debug(f"Created voice channel {voice_channel}")
         await ctx.send(result_str)
 
-    @commands.command(help="List all groups")
+    @commands.command(help="List all groups", aliases=['gliste'])
     async def glist(self, ctx,
                     full: bool = commands.parameter(default=False, description="'True' to show full groups, too")):
         result_str = organize_group.list_groups(full)
         await ctx.send(result_str)
 
-    @commands.command(help="Destroys a group that you've created")
+    @commands.command(help="Destroys a group that you've created", aliases=['gentfernen'])
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = f"{group_prefix}_{ctx.author}"
         status, result_str = organize_group.destroy_group(group_name)
@@ -84,7 +84,8 @@ class GroupCommands(commands.Cog):
         await ctx.send(result_str)
 
     @commands.command(
-        help="Sets a group key like 'uhrzeit'. Setting 'spieler' below the current number will not remove any players.")
+        help="Sets a group key like 'uhrzeit'. Setting 'spieler' below the current number will not remove any players.",
+    aliases=['gsetze'])
     async def gset(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)"),
                    key: str = commands.parameter(
                        description="Key to set (for example 'uhrzeit')"),
@@ -94,7 +95,7 @@ class GroupCommands(commands.Cog):
         result_str = organize_group.set_key(group, key, value)
         await ctx.send(result_str)
 
-    @commands.command(help="Removes a player from your group")
+    @commands.command(help="Removes a player from your group", aliases=['gkick'])
     async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
                       player: str = commands.parameter(description="Player to remove.")):
         group = f"{group_prefix}_{ctx.author}"
@@ -111,7 +112,7 @@ class GroupCommands(commands.Cog):
 
         await ctx.send(result_str)
 
-    @commands.command(help="Join a group as a player")
+    @commands.command(help="Join a group as a player", aliases=['gbeitreten'])
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
         status, result_str = organize_group.add_self(group, str(ctx.author))
 
@@ -123,7 +124,7 @@ class GroupCommands(commands.Cog):
 
         await ctx.send(result_str)
 
-    @commands.command(help="Leave a group as a player")
+    @commands.command(help="Leave a group as a player", aliases=['gaustreten'])
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
         status, result_str = organize_group.remove_self(group, str(ctx.author))
 
