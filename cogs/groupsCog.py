@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import discord
+import logging
 from discord.ext import commands
 from discord.utils import get
 from cogs.group import organize_group
@@ -29,16 +30,25 @@ class GroupCommands(commands.Cog):
         if status:
             # create role
             role = await ctx.guild.create_role(name=group_name)
+            logging.debug(f"Created role {role}.")
             # add role to GM
             await ctx.author.add_roles(role)
+            logging.debug(f"Added role {role} to user {ctx.author}.")
             # permissions
             overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
                           role: discord.PermissionOverwrite(read_messages=True)}
+            logging.debug(f"Permission for role {role} set.")
             # create category
             category = await ctx.guild.create_category(name=group_name)
+            logging.debug(f"Created category {category}")
             # create channels
-            await ctx.guild.create_text_channel(name=group_name, overwrites=overwrites, category=category)
-            await ctx.guild.create_voice_channel(name=group_name, overwrites=overwrites, category=category)
+            text_channel = await ctx.guild.create_text_channel(name=group_name, overwrites=overwrites,
+                                                               category=category)
+            logging.debug(f"Created text channel {text_channel}")
+            voice_channel = await ctx.guild.create_voice_channel(name=group_name,
+                                                                 overwrites=overwrites,
+                                                                 category=category)
+            logging.debug(f"Created voice channel {voice_channel}")
         await ctx.send(result_str)
 
     @commands.command(help="List all groups")
@@ -66,26 +76,37 @@ class GroupCommands(commands.Cog):
         await ctx.send(result_str)
 
     @commands.command(help="Removes a player from your group")
-    async def remove_player(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
-                            player: str = commands.parameter(description="Player to remove.")):
+    async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
+                      player: str = commands.parameter(description="Player to remove.")):
         group = f"{group_prefix}_{ctx.author}"
-        result_str = organize_group.remove_player(group, player)
+        status, result_str = organize_group.remove_player(group, player)
+
+        if status:
+            name, discriminator = player.split("#")
+            user = discord.utils.get(ctx.guild.members, name=name, discriminator=discriminator)
+            group_role = get(ctx.guild.roles, name=group)
+            # removing group role when existing
+            if group_role in user.roles:
+                await user.remove_roles(group_role)
+                logging.debug(f"Removed role {group_role} from user {user}.")
+
         await ctx.send(result_str)
 
     @commands.command(help="Join a group as a player")
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
-        status, result_str = organize_group.add_self(group, ctx.author)
+        status, result_str = organize_group.add_self(group, str(ctx.author))
 
         if status:
             # get the role by group name
             group_role = get(ctx.guild.roles, name=group)
             await ctx.author.add_roles(group_role)
+            logging.debug(f"Added role {group_role} to user {ctx.author}.")
 
         await ctx.send(result_str)
 
     @commands.command(help="Leave a group as a player")
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
-        status, result_str = organize_group.remove_self(group, ctx.author)
+        status, result_str = organize_group.remove_self(group, str(ctx.author))
 
         if status:
             group_role = get(ctx.guild.roles, name=group)
@@ -93,5 +114,6 @@ class GroupCommands(commands.Cog):
             user_roles = ctx.author.roles
             if group_role in user_roles:  # only remove if role really exists
                 await ctx.author.remove_roles(group_role)
+                logging.debug(f"Removed role {group_role} from user {ctx.author}.")
 
         await ctx.send(result_str)

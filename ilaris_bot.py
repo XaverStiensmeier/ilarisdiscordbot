@@ -11,6 +11,12 @@ with open(basic_paths.rjoin("token")) as token_file:
     token = token_file.readline()
 
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+logging.basicConfig(
+    filename='discord.log',
+    level=logging.DEBUG,
+    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
 # Credentials
 intents = discord.Intents().all()
 # Create bot
@@ -26,4 +32,27 @@ async def on_ready():
     await bot.add_cog(GroupCommands(bot))
 
 
-bot.run(token) #, log_handler=handler
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(f"Command not found. See `!help` for all commands.")
+    if isinstance(error, commands.BadArgument):
+        usage = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
+        await ctx.send(f"Failed converting an argument\nCorrect usage: {usage}")
+    elif isinstance(error, Exception):
+        if ctx.command:
+            info = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
+        else:
+            info = "Unexpected Error."
+        await ctx.send(f"Command Execution failed\n{info}")
+
+
+@bot.event
+async def on_command(ctx):
+    server = ctx.guild.name
+    user = ctx.author
+    command = ctx.command
+    logging.info("'{}' used '{}' in '{}'".format(user, command, server))
+
+
+bot.run(token)  # , log_handler=handler
