@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import discord
+import logging
 from discord.ext import commands
 from discord.utils import get
 from cogs.group import organize_group
@@ -51,7 +52,26 @@ class GroupCommands(commands.Cog):
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = f"{group_prefix}_{ctx.author}"
         status, result_str = organize_group.destroy_group(group_name)
-        # if exit_status, delete channels and role
+        # if status, delete channels and role
+        status=True
+        if status:
+            # remove role
+            role = discord.utils.get(ctx.guild.roles, name=group_name)
+            if role:
+                await role.delete()
+                logging.debug(f"Deleted role {role}.")
+
+            # remove category
+            category = discord.utils.get(ctx.guild.categories, name=group_name)
+            if category:
+                await category.delete()
+                logging.debug(f"Deleted category {category}.")
+            # remove channels
+            for channel in ctx.guild.channels:
+                if str(channel) == group_name or str(channel) == group_name.replace("#", "").lower():
+                    await channel.delete()
+                    logging.debug(f"Deleted channel {channel}.")
+
         await ctx.send(result_str)
 
     @commands.command(
