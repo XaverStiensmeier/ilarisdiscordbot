@@ -30,12 +30,13 @@ with open(basic_paths.rjoin("groups/groups.yml"), "r") as yaml_file:
 
 def list_groups(show_full=False):
     return_str = "**- Gruppen Liste -**\n"
-    for gruppe, daten in groups.items():
+    for group, daten in groups.items():
         if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
-            return_str += f"**--- {gruppe} ---**\n"
+            return_str += f"**--- {group} ---**\n"
             return_str += f"{DESCRIPTION}: {daten[DESCRIPTION]}\n"
             return_str += f"{DATE}: {daten[DATE]}\n"
-            return_str += f"{PLAYER_NUMBER}: ({len(daten[PLAYER])}/{daten[PLAYER_NUMBER]})\n\n"
+            return_str += f"{PLAYER_NUMBER}: ({len(daten[PLAYER])}/{daten[PLAYER_NUMBER]})\n"
+            return_str += f"Zum Beitreten: `!gjoin {group}`\n\n"
     return return_str
 
 
@@ -43,7 +44,10 @@ def create_group(group, date, player_number=4, description=""):
     if groups.get(group):
         return 0, "Deine Gruppe existiert bereits."
     groups[group] = {DATE: date, PLAYER_NUMBER: player_number, DESCRIPTION: description, PLAYER: []}
-    return True, f"Neue Gruppe {group} angelegt."
+    return_str = f"Neue Gruppe {group} angelegt.\n"
+    return_str += f"Zum Gruppe entfernen: `!gdestroy {'_'.join(group.split('_')[:-1])}`\n"
+    return_str += f"Zum Beitreten: `!gjoin {group}`\n\n"
+    return True, return_str
 
 
 def destroy_group(group):
@@ -82,7 +86,9 @@ def add_self(group, player):
             maximum_player_number = int(groups[group][PLAYER_NUMBER])
             if current_player_number < maximum_player_number:
                 groups[group][PLAYER].append(player)
-                return True, f"Du wurdest Gruppe {group} hinzugefügt."
+                return_str = f"Du wurdest Gruppe {group} hinzugefügt.\n"
+                return_str += f"Zum Verlassen `!gleave {group}`"
+                return True, return_str
             else:
                 return False, f"Gruppe {group} ist bereits voll: {current_player_number}/{maximum_player_number}"
         else:
