@@ -54,11 +54,14 @@ def destroy_group(group):
 
 
 def set_key(group, key, value):
-    if gruppen.get(group) and key in ALLOWED_KEYS:
-        gruppen[group][key] = value
-        return f"{key}: {value} wurde gesetzt"
+    if gruppen.get(group):
+        if key in ALLOWED_KEYS:
+            gruppen[group][key] = value
+            return f"{key}: {value} wurde gesetzt"
+        else:
+            return f"{key} konnte nicht gesetzt werden."
     else:
-        return f"{key} konnte nicht gesetzt werden."
+        return f"Gruppe {group} existiert nicht."
 
 
 def remove_player(gruppe, player):
