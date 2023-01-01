@@ -7,7 +7,7 @@ import yaml
 
 import basic_paths
 
-PLAYER_NUMBER = "spielerzahl"
+PLAYER_NUMBER = "spieleranzahl"
 DATE = "uhrzeit"
 DESCRIPTION = "beschreibung"
 PLAYER = "spieler"
