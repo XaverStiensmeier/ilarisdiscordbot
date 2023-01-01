@@ -62,6 +62,7 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Destroys a group that you've created", aliases=['gentfernen'])
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
+        group_prefix = group_prefix.lower()
         group_name = f"{group_prefix}_{ctx.author}"
         status, result_str = organize_group.destroy_group(group_name)
         # if status, delete channels and role
@@ -95,6 +96,7 @@ class GroupCommands(commands.Cog):
                        description="Key to set (for example 'uhrzeit')"),
                    value: str = commands.parameter(
                        description="Value to store under key (for example '25.02.23 14:00')")):
+        group_prefix = group_prefix.lower()
         group = f"{group_prefix}_{ctx.author}"
         result_str = organize_group.set_key(group, key, value)
         await ctx.send(result_str)
@@ -105,6 +107,7 @@ class GroupCommands(commands.Cog):
     async def gsetdate(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)"),
                        value: str = commands.parameter(
                            description="New date")):
+        group_prefix = group_prefix.lower()
         group = f"{group_prefix}_{ctx.author}"
         result_str = organize_group.set_key(group, "uhrzeit", value)
         await ctx.send(result_str)
@@ -115,6 +118,7 @@ class GroupCommands(commands.Cog):
     async def gsetdescription(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)"),
                               value: str = commands.parameter(
                                   description="New description")):
+        group_prefix = group_prefix.lower()
         group = f"{group_prefix}_{ctx.author}"
         result_str = organize_group.set_key(group, "beschreibung", value)
         await ctx.send(result_str)
@@ -126,6 +130,7 @@ class GroupCommands(commands.Cog):
                                   group_prefix: str = commands.parameter(description="Your group (short name)"),
                                   value: str = commands.parameter(
                                       description="New number of players")):
+        group_prefix = group_prefix.lower()
         group = f"{group_prefix}_{ctx.author}"
         result_str = organize_group.set_key(group, "spielerzahl", value)
         await ctx.send(result_str)
@@ -133,6 +138,7 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Removes a player from your group", aliases=['gkick'])
     async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
                       player: str = commands.parameter(description="Player to remove.")):
+        group_prefix = group_prefix.lower()
         group = f"{group_prefix}_{ctx.author}"
         status, result_str = organize_group.remove_player(group, player)
 
