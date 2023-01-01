@@ -7,88 +7,96 @@ import yaml
 
 import basic_paths
 
+PLAYER_NUMBER = "spieleranzahl"
+DATE = "uhrzeit"
+DESCRIPTION = "beschreibung"
+PLAYER = "spieler"
+
 
 def sigterm_handler(_signo, _stack_frame):
-    with open(basic_paths.rjoin("gruppen/gruppen.yml"), "w+") as yaml_file:
-        yaml.safe_dump(gruppen, yaml_file)
+    with open(basic_paths.rjoin("groups/groups.yml"), "w+") as yaml_file:
+        yaml.safe_dump(groups, yaml_file)
     sys.exit(0)
 
 
 signal.signal(signal.SIGINT, sigterm_handler)
 signal.signal(signal.SIGTERM, sigterm_handler)
 
-ALLOWED_KEYS = ["uhrzeit", "spielerzahl", "beschreibung"]
+ALLOWED_KEYS = [DATE, PLAYER_NUMBER, DESCRIPTION]
 
-with open(basic_paths.rjoin("gruppen/gruppen.yml"), "r") as yaml_file:
-    gruppen = yaml.safe_load(yaml_file) or {}
+with open(basic_paths.rjoin("groups/groups.yml"), "r") as yaml_file:
+    groups = yaml.safe_load(yaml_file) or {}
 
 
 def list_groups(show_full=False):
     return_str = "**- Gruppen Liste -**\n"
-    for gruppe, daten in gruppen.items():
-        if show_full or len(daten['spieler']) < daten['spielerzahl']:
+    for gruppe, daten in groups.items():
+        if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
             return_str += f"**--- {gruppe} ---**\n"
-            return_str += f"Beschreibung: {daten['beschreibung']}\n"
-            return_str += f"Uhrzeit: {daten['uhrzeit']}\n"
-            return_str += f"Spielerzahl: ({len(daten['spieler'])}/{daten['spielerzahl']})\n\n"
+            return_str += f"{DESCRIPTION}: {daten[DESCRIPTION]}\n"
+            return_str += f"{DATE}: {daten[DATE]}\n"
+            return_str += f"{PLAYER_NUMBER}: ({len(daten[PLAYER])}/{daten[PLAYER_NUMBER]})\n\n"
     return return_str
 
 
-def create_group(gruppe, uhrzeit, spielerzahl=4, beschreibung=""):
-    if gruppen.get(gruppe):
+def create_group(group, date, player_number=4, description=""):
+    if groups.get(group):
         return 0, "Deine Gruppe existiert bereits."
-    gruppen[gruppe] = {"uhrzeit": uhrzeit, "spielerzahl": spielerzahl, "beschreibung": beschreibung, "spieler": []}
-    return True, f"Neue Gruppe {gruppe} angelegt."
+    groups[group] = {DATE: date, PLAYER_NUMBER: player_number, DESCRIPTION: description, PLAYER: []}
+    return True, f"Neue Gruppe {group} angelegt."
 
 
-def destroy_group(gruppe):
-    if gruppen.get(gruppe):
-        gruppen.pop(gruppe)
+def destroy_group(group):
+    if groups.get(group):
+        groups.pop(group)
         return 1, "Deine Gruppe wurde gelöscht."
     return False, "Deine Gruppe existiert nicht."
 
 
-def set_key(gruppe, key, value):
-    if gruppen.get(gruppe) and key in ALLOWED_KEYS:
-        gruppen[gruppe][key] = value
-        return f"{key}: {value} wurde gesetzt"
-    else:
-        return f"{key} konnte nicht gesetzt werden."
-
-
-def remove_player(gruppe, spieler):
-    if gruppen.get(gruppe):
-        if spieler in gruppen[gruppe]["spieler"]:
-            gruppen[gruppe]["spieler"].remove(spieler)
-            return True, f"Spieler {spieler} wurde entfernt."
+def set_key(group, key, value):
+    if groups.get(group):
+        if key in ALLOWED_KEYS:
+            groups[group][key] = value
+            return f"{key}: {value} wurde gesetzt"
         else:
-            return False, f"Spieler {spieler} ist nicht in Gruppe {gruppe}."
+            return f"{key} konnte nicht gesetzt werden."
+    else:
+        return f"Gruppe {group} existiert nicht."
+
+
+def remove_player(gruppe, player):
+    if groups.get(gruppe):
+        if player in groups[gruppe][PLAYER]:
+            groups[gruppe][PLAYER].remove(player)
+            return True, f"Spieler {player} wurde entfernt."
+        else:
+            return False, f"Spieler {player} ist nicht in Gruppe {gruppe}."
     else:
         return False, f"Gruppe {gruppe} existiert nicht."
 
 
-def add_self(gruppe, spieler):
-    if gruppen.get(gruppe):
-        if spieler not in gruppen[gruppe]["spieler"]:
-            aktuelle_anzahl = len(gruppen[gruppe]["spieler"])
-            maximal_anzahl = gruppen[gruppe]["spielerzahl"]
-            if aktuelle_anzahl < maximal_anzahl:
-                gruppen[gruppe]["spieler"].append(spieler)
-                return True, f"Du wurdest Gruppe {gruppe} hinzugefügt."
+def add_self(group, player):
+    if groups.get(group):
+        if player not in groups[group][PLAYER]:
+            current_player_number = len(groups[group][PLAYER])
+            maximum_player_number = int(groups[group][PLAYER_NUMBER])
+            if current_player_number < maximum_player_number:
+                groups[group][PLAYER].append(player)
+                return True, f"Du wurdest Gruppe {group} hinzugefügt."
             else:
-                return False, f"Gruppe {gruppe} ist bereits voll: {aktuelle_anzahl}/{maximal_anzahl}"
+                return False, f"Gruppe {group} ist bereits voll: {current_player_number}/{maximum_player_number}"
         else:
-            return False, f"Du bist bereits Teil der Gruppe {gruppe}."
+            return False, f"Du bist bereits Teil der Gruppe {group}."
     else:
-        return False, f"Gruppe {gruppe} existiert nicht."
+        return False, f"Gruppe {group} existiert nicht."
 
 
-def remove_self(gruppe, spieler):
-    if gruppen.get(gruppe):
-        if spieler in gruppen[gruppe]["spieler"]:
-            gruppen[gruppe]["spieler"].remove(spieler)
-            return True, f"Du wurdest aus Gruppe {gruppe} entfernt."
+def remove_self(group, player):
+    if groups.get(group):
+        if player in groups[group][PLAYER]:
+            groups[group][PLAYER].remove(player)
+            return True, f"Du wurdest aus Gruppe {group} entfernt."
         else:
-            return False, f"Du bist kein Spieler der Gruppe {gruppe}."
+            return False, f"Du bist kein Spieler der Gruppe {group}."
     else:
-        return False, f"Gruppe {gruppe} existiert nicht."
+        return False, f"Gruppe {group} existiert nicht."
