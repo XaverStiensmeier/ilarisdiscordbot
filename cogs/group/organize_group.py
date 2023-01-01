@@ -57,7 +57,7 @@ def set_key(group, key, value):
     if groups.get(group):
         if key in ALLOWED_KEYS:
             groups[group][key] = value
-            return f"{key}: {value} wurde gesetzt"
+            return f"{key}: '{value}' wurde gesetzt"
         else:
             return f"{key} konnte nicht gesetzt werden."
     else:
