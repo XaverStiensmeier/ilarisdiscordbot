@@ -84,7 +84,7 @@ class GroupCommands(commands.Cog):
         await ctx.send(result_str)
 
     @commands.command(
-        help="Sets a group key like 'uhrzeit'. Setting 'player' below the current number will not remove any players.",
+        help="Sets a group key like 'uhrzeit'. Setting 'spielerzahl' below the current number will not remove any players.",
         aliases=['gsetze'])
     async def gset(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)"),
                    key: str = commands.parameter(

@@ -190,5 +190,5 @@ resources/ilaris/
 test/
 
 # Private Data Folders
-resources/gruppen/
+resources/groups/
 resources/token
