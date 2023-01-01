@@ -46,6 +46,7 @@ async def on_command_error(ctx, error):
         else:
             info = "Unexpected Error."
         await ctx.send(f"Command Execution failed\n{info}")
+    raise error
 
 
 @bot.event
