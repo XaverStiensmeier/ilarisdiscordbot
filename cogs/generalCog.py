@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-import discord
 import os
+
+import discord
 from discord.ext import commands
 
-from cogs.general import ilaris_database
-from cogs.general import parse_die
 import basic_paths
 from cogs.general import differ
+from cogs.general import ilaris_database
+from cogs.general import parse_die
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(basic_paths.rjoin("manoeverkarten"))]
+
 
 class GeneralCommands(commands.Cog):
     """

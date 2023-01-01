@@ -24,6 +24,7 @@ class GroupCommands(commands.Cog):
                           default=4, description="Maximum number of players"),
                       description: str = commands.parameter(default="Eine spannende Ilaris Runde!",
                                                             description="Description for your soon-to-be players")):
+        group = group.lower()
         group_name = f"{group}_{ctx.author}"
         status, result_str = organize_group.create_group(
             group_name, time, player, description)
@@ -148,6 +149,7 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Join a group as a player", aliases=['gbeitreten'])
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
+        group = group.lower()
         status, result_str = organize_group.add_self(group, str(ctx.author))
 
         if status:
@@ -160,6 +162,7 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Leave a group as a player", aliases=['gaustreten'])
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
+        group = group.lower()
         status, result_str = organize_group.remove_self(group, str(ctx.author))
 
         if status:
