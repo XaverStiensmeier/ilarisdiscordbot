@@ -6,6 +6,9 @@ import logging
 import basic_paths
 from cogs.generalCog import GeneralCommands
 from cogs.groupsCog import GroupCommands
+from cogs.group import organize_group
+
+NO_UPDATE_COMMAND_LIST = ["glist"]
 
 with open(basic_paths.rjoin("token")) as token_file:
     token = token_file.readline()
@@ -55,6 +58,12 @@ async def on_command(ctx):
     user = ctx.author
     command = ctx.command
     logging.info("'{}' used '{}' in '{}'".format(user, command, server))
-
+    if ctx.command.cog_name == "GroupCommands" and ctx.command.name not in NO_UPDATE_COMMAND_LIST:
+        channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
+        if channel:
+            await channel.purge()
+            await channel.send(organize_group.list_groups())
+        else:
+            logging.info("No group channel found.")
 
 bot.run(token)  # , log_handler=handler
