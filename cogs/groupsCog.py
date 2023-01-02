@@ -154,7 +154,11 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Join a group as a player", aliases=['gbeitreten'])
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
         group = group.replace("#", "").lower()
-        status, result_str = organize_group.add_self(group, str(ctx.author))
+
+        if group.endswith(str(ctx.author).replace("#","").lower()):
+            status, result_str = False, "You can't join your own group."
+        else:
+            status, result_str = organize_group.add_self(group, str(ctx.author))
 
         if status:
             # get the role by group name
