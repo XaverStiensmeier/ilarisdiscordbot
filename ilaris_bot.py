@@ -7,18 +7,25 @@ import basic_paths
 from cogs.generalCog import GeneralCommands
 from cogs.groupsCog import GroupCommands
 from cogs.group import organize_group
+import traceback
 
 NO_UPDATE_COMMAND_LIST = ["glist"]
 
 with open(basic_paths.rjoin("token")) as token_file:
     token = token_file.readline()
 
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler = logging.handlers.RotatingFileHandler(
+    filename='discord.log',
+    encoding='utf-8',
+    maxBytes=32 * 1024 * 1024,  # 32 MiB
+    backupCount=5,  # Rotate through 5 files
+)
 logging.basicConfig(
     filename='discord.log',
     level=logging.DEBUG,
     format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[handler]
 )
 # Credentials
 intents = discord.Intents().all()
@@ -37,7 +44,7 @@ async def on_ready():
 
 @bot.event
 async def on_command_error(ctx, error):
-    logging.info(error)
+    logging.info(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(f"Command not found. See `!help` for all commands.")
     if isinstance(error, commands.BadArgument):
