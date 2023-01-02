@@ -44,6 +44,7 @@ async def on_ready():
 
 @bot.event
 async def on_command_error(ctx, error):
+    logging.info(error)
     logging.info(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(f"Command not found. See `!help` for all commands.")
@@ -56,6 +57,7 @@ async def on_command_error(ctx, error):
         else:
             info = "Unexpected Error."
         await ctx.send(f"Command Execution failed\n{info}")
+    raise error
 
 
 @bot.event
