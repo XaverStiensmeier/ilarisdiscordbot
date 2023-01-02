@@ -3,6 +3,7 @@
 import discord
 from discord.ext import commands
 import logging
+import logging.handlers
 import basic_paths
 from cogs.generalCog import GeneralCommands
 from cogs.groupsCog import GroupCommands
@@ -21,7 +22,6 @@ handler = logging.handlers.RotatingFileHandler(
     backupCount=5,  # Rotate through 5 files
 )
 logging.basicConfig(
-    filename='discord.log',
     level=logging.DEBUG,
     format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
@@ -56,7 +56,6 @@ async def on_command_error(ctx, error):
         else:
             info = "Unexpected Error."
         await ctx.send(f"Command Execution failed\n{info}")
-    raise error
 
 
 @bot.event
