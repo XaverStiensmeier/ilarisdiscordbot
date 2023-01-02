@@ -47,15 +47,17 @@ async def on_command_error(ctx, error):
     logging.info(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(f"Command not found. See `!help` for all commands.")
-    if isinstance(error, commands.BadArgument):
-        usage = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
-        await ctx.send(f"Failed converting an argument\nCorrect usage: {usage}")
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        await ctx.send(f"Correct Usage: {ctx.prefix}{ctx.command.name} {ctx.command.signature}")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send(f"Correct Usage: {ctx.prefix}{ctx.command.name} {ctx.command.signature}")
     elif isinstance(error, Exception):
         if ctx.command:
             info = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
         else:
             info = "Unexpected Error."
         await ctx.send(f"Command Execution failed\n{info}")
+    raise error
 
 
 @bot.event

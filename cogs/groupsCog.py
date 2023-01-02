@@ -55,6 +55,8 @@ class GroupCommands(commands.Cog):
             voice_channel = await ctx.guild.create_voice_channel(name=group_name,
                                                                  overwrites=overwrites,
                                                                  category=category)
+
+            await text_channel.send(f"Hey, <@{ctx.author.id}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt.")
             logging.debug(f"Created voice channel {voice_channel}")
         await ctx.send(result_str)
 
@@ -136,7 +138,7 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Removes a player from your group", aliases=['gkick'])
     async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
-                      player: str = commands.parameter(description="Player to remove.")):
+                      player: discord.Member = commands.parameter(description="Player to remove.")):
         group = sanitize_group_name(group_prefix, ctx.author)
         status, result_str = organize_group.remove_player(group, player)
 
@@ -148,6 +150,8 @@ class GroupCommands(commands.Cog):
             if group_role in user.roles:
                 await user.remove_roles(group_role)
                 logging.debug(f"Removed role {group_role} from user {user}.")
+            text_channel = discord.utils.get(ctx.guild.text_channels, name=group)
+            await text_channel.send(f"Verabschiedet <@{player.id}>.")
 
         await ctx.send(result_str)
 
@@ -165,6 +169,8 @@ class GroupCommands(commands.Cog):
             group_role = get(ctx.guild.roles, name=group)
             await ctx.author.add_roles(group_role)
             logging.debug(f"Added role {group_role} to user {ctx.author}.")
+            text_channel = discord.utils.get(ctx.guild.text_channels, name=group)
+            await text_channel.send(f"Begrüßt <@{ctx.author.id}>!")
 
         await ctx.send(result_str)
 
@@ -180,5 +186,7 @@ class GroupCommands(commands.Cog):
             if group_role in user_roles:  # only remove if role really exists
                 await ctx.author.remove_roles(group_role)
                 logging.debug(f"Removed role {group_role} from user {ctx.author}.")
+            text_channel = discord.utils.get(ctx.guild.text_channels, name=group)
+            await text_channel.send(f"Verabschiedet <@{ctx.author.id}>.")
 
         await ctx.send(result_str)
