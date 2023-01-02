@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-import discord
 import os
+
+import discord
 from discord.ext import commands
 
-from cogs.general import ilaris_database
-from cogs.general import parse_die
 import basic_paths
 from cogs.general import differ
+from cogs.general import ilaris_database
+from cogs.general import parse_die
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(basic_paths.rjoin("manoeverkarten"))]
+
 
 class GeneralCommands(commands.Cog):
     """
@@ -33,7 +35,7 @@ class GeneralCommands(commands.Cog):
         else:
             await ctx.send(ilaris_database.get_database_entry(name=arg))
 
-    @commands.command(help="Posts an image of the given rulecard.")
+    @commands.command(help="Posts an image of the given rulecard.", aliases=['karte'])
     async def card(self, ctx, arg: str = commands.parameter(
         description="Name of rule card")):
         name, three_best = differ.closest_match(arg, cards)
@@ -44,7 +46,7 @@ class GeneralCommands(commands.Cog):
         else:
             await ctx.send("No such rule card...")
 
-    @commands.command(help="Rolls a die")
+    @commands.command(help="Rolls a die", aliases=['w'])
     async def r(self, ctx, roll: str = commands.parameter(default="2@3d20", description="Dice string to parse.")):
         named_rolls = {"I": "1d20", "III": "3d20", "I+": "1@2d20", "I++": "1@3d20", "III+": "2@4d20", "III++": "2@5d20",
                        "+": "2@4d20", "++": "2@5d20"}

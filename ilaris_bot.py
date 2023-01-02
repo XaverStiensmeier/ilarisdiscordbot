@@ -3,19 +3,29 @@
 import discord
 from discord.ext import commands
 import logging
+import logging.handlers
 import basic_paths
 from cogs.generalCog import GeneralCommands
 from cogs.groupsCog import GroupCommands
+from cogs.group import organize_group
+import traceback
+
+NO_UPDATE_COMMAND_LIST = ["glist"]
 
 with open(basic_paths.rjoin("token")) as token_file:
     token = token_file.readline()
 
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
-logging.basicConfig(
+handler = logging.handlers.RotatingFileHandler(
     filename='discord.log',
+    encoding='utf-8',
+    maxBytes=32 * 1024 * 1024,  # 32 MiB
+    backupCount=5,  # Rotate through 5 files
+)
+logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[handler]
 )
 # Credentials
 intents = discord.Intents().all()
@@ -34,17 +44,20 @@ async def on_ready():
 
 @bot.event
 async def on_command_error(ctx, error):
+    logging.info(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(f"Command not found. See `!help` for all commands.")
-    if isinstance(error, commands.BadArgument):
-        usage = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
-        await ctx.send(f"Failed converting an argument\nCorrect usage: {usage}")
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        await ctx.send(f"Correct Usage: {ctx.prefix}{ctx.command.name} {ctx.command.signature}")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send(f"Correct Usage: {ctx.prefix}{ctx.command.name} {ctx.command.signature}")
     elif isinstance(error, Exception):
         if ctx.command:
             info = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
         else:
             info = "Unexpected Error."
         await ctx.send(f"Command Execution failed\n{info}")
+    raise error
 
 
 @bot.event
@@ -53,6 +66,12 @@ async def on_command(ctx):
     user = ctx.author
     command = ctx.command
     logging.info("'{}' used '{}' in '{}'".format(user, command, server))
-
+    if ctx.command.cog_name == "GroupCommands" and ctx.command.name not in NO_UPDATE_COMMAND_LIST:
+        channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
+        if channel:
+            await channel.purge()
+            await channel.send(organize_group.list_groups())
+        else:
+            logging.info("No group channel found.")
 
 bot.run(token)  # , log_handler=handler
