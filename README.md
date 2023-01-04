@@ -52,7 +52,7 @@ pip install -r /path/to/requirements.txt
 I might be forgetting some. If you encounter issues regarding missing files,
 open an issue and I will write more about what's needed.
 #### Large Folders
-1. `resources/manoeverkarten/` is a folder containing `Manöverkarten` [Gatsu's Manöverkartenplugin](https://dsaforum.de/viewtopic.php?t=22605)
+1. `resources/manoeverkarten/` is a folder containing `Manöverkarten` [Gatsu's Manöverkartenplugin](https://dsaforum.de/viewtopic.php?p=2002977#p2002979)
 2. `resources/ilaris/` is a folder containing the core rules as image files (`ilaris-001.png`, ..., `ilaris-219.png`)
 
 ##### Converting PDFs to images
