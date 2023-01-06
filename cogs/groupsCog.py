@@ -6,11 +6,12 @@ from discord.ext import commands
 from discord.utils import get
 
 from cogs.group import organize_group
+import re
 
 
 def sanitize_group_name(group_prefix, author):
     group_name = f"{group_prefix}_{author}"
-    return group_name.replace("#", "").lower()
+    return re.sub('[^0-9a-zA-Z]+', '', group_name).lower()
 
 
 class GroupCommands(commands.Cog):
@@ -157,7 +158,7 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Join a group as a player", aliases=['gbeitreten'])
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
-        group = group.replace("#", "").lower()
+        group = re.sub('[^0-9a-zA-Z]+', '', group).lower()
 
         if group.endswith(str(ctx.author).replace("#","").lower()):
             status, result_str = False, "You can't join your own group."
@@ -176,7 +177,7 @@ class GroupCommands(commands.Cog):
 
     @commands.command(help="Leave a group as a player", aliases=['gaustreten'])
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
-        group = group.replace("#", "").lower()
+        group = re.sub('[^0-9a-zA-Z]+', '', group).lower()
         status, result_str = organize_group.remove_self(group, str(ctx.author))
 
         if status:
