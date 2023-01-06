@@ -58,6 +58,6 @@ class GeneralCommands(commands.Cog):
     @commands.command(help="Admin only: Gets debug information")
     @commands.has_permissions(administrator=True)
     async def what(self, ctx):
-        await ctx.send(ctx.author, file=discord.File(os.path.join(basic_paths.ROOT, "discord.log")), content="Log")
-        await ctx.send(ctx.author, file=discord.File(basic_paths.rjoin("groups/groups.yml")), content="Groups")
+        await ctx.author.send(file=discord.File(os.path.join(basic_paths.ROOT, "discord.log")))
+        await ctx.author.send(file=discord.File(basic_paths.rjoin("groups/groups.yml")))
 
