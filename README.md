@@ -1,6 +1,9 @@
 # ilarisdiscordbot
 A work in progress discord bot for the [ilaris](https://ilarisblog.wordpress.com/downloads/) ttrpg.
 
+If you use this dev version, make sure that the bot can only be invited by you.
+Otherwise, others can view your log and groups without administrator rights. 
+
 ## How to use
 Needs to be updated
 
