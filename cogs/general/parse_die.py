@@ -3,11 +3,11 @@ import random
 import re
 
 
-def rollDie(n, at, sides, modificator):
+def roll_die(n, at, sides, modification):
     """
     at=0 don't at. at=1 smallest, at=n largest
     """
-    summation = modificator
+    summation = modification
     throws = []
     for elem in range(int(n)):
         current = random.randint(1, int(sides))
@@ -20,8 +20,8 @@ def rollDie(n, at, sides, modificator):
         return summation
 
 
-def parseDie(text):
-    modificator = 0
+def parse_die(text):
+    modification = 0
     arguments = text.split("@")
     if len(arguments) == 2:
         at = int(arguments[0])
@@ -29,16 +29,16 @@ def parseDie(text):
     else:
         at = 0
     arguments = text.split("-")
-    if (len(arguments) >= 2):
+    if len(arguments) >= 2:
         for elem in arguments[1:]:
-            modificator -= int(elem)
+            modification -= int(elem)
         text = arguments[0]
     else:
         arguments = text.split("+")
-        if (len(arguments) >= 2):
+        if len(arguments) >= 2:
             for elem in arguments[1:]:
-                modificator += int(elem)
+                modification += int(elem)
             text = arguments[0]
-    if (text[0].isdigit()):
+    if text[0].isdigit():
         values = re.split("d|w",text.lower())
-        return rollDie(values[0], at, values[1], modificator)
+        return roll_die(values[0], at, values[1], modification)

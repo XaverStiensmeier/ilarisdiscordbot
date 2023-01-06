@@ -46,11 +46,18 @@ class GeneralCommands(commands.Cog):
         else:
             await ctx.send("No such rule card...")
 
-    @commands.command(help="Rolls a die", aliases=['w'])
-    async def r(self, ctx, roll: str = commands.parameter(default="2@3d20", description="Dice string to parse.")):
-        named_rolls = {"I": "1d20", "III": "3d20", "I+": "1@2d20", "I++": "1@3d20", "III+": "2@4d20", "III++": "2@5d20",
+    @commands.command(help="Rolls a die like 2d6", aliases=['w'])
+    async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse.")):
+        named_rolls = {"I": "1d20", "III": "2@3d20", "I+": "1@2d20", "I++": "1@3d20", "III+": "2@4d20", "III++": "2@5d20",
                        "+": "2@4d20", "++": "2@5d20"}
         if roll in named_rolls:
             roll = named_rolls[roll]
             await ctx.send(f"Rolling {roll}")
-        await ctx.send(parse_die.parseDie(roll))
+        await ctx.send(parse_die.parse_die(roll))
+
+    @commands.command(help="Admin only: Gets debug information")
+    @commands.has_permissions(administrator=True)
+    async def what(self, ctx):
+        await ctx.send(ctx.author, file=discord.File(os.path.join(basic_paths.ROOT, "discord.log")), content="Log")
+        await ctx.send(ctx.author, file=discord.File(basic_paths.rjoin("groups/groups.yml")), content="Groups")
+
