@@ -37,6 +37,7 @@ Anmerkung: Argumente mit Leerzeichen müssen in Anführungszeichen angegeben wer
 ```
 """
 
+
 class GeneralCommands(commands.Cog):
     """
     Commands for handling general stuff
@@ -71,16 +72,17 @@ class GeneralCommands(commands.Cog):
         else:
             await ctx.send("No such rule card...")
 
-    @commands.command(help="Rolls dice.", aliases=['w'])
+    @commands.command(help="Rolls dice.\n"
+                           "2d6+3: Sum the result of 2 6-sided dice and 3.\n"
+                           "2@3d20: Roll 3d20 and take the second highest i.e. (20,15,5) => 15.\n"
+                           "Special rolls:\n"
+                           "I: 1d20, I+: 1@2d20, I++ 1@3d20\n"
+                           "III: 2@3d20, III+: 2@4d20, III++ 2@5d20\n"
+                           "+ indicates fate point usage, ++ indicates fate point usage with a fitting aspect.",
+                      aliases=['w'])
     async def r(self, ctx,
                 roll: str = commands.parameter(default="III",
-                                               description="Dice string to parse. e.g. 2d6+3: Sum the result of 2 "
-                                                           "6-sided dice and 3. 2@3d20: Roll 3d20 and take the second "
-                                                           "highest i.e. (20,15,5) => 15.\n"
-                                                           "Special rolls: I: 1d20, III: 2@3d20. Use 'I+' or 'III+' "
-                                                           "to indicate fate point usage. "
-                                                           "Use '++' with 'I++' or 'III++' to indicate fate point "
-                                                           "usage with an aspect.")):
+                                               description="Dice string to parse.")):
         named_rolls = {"I": "1d20", "III": "2@3d20", "I+": "1@2d20", "I++": "1@3d20", "III+": "2@4d20",
                        "III++": "2@5d20",
                        "+": "2@4d20", "++": "2@5d20"}
