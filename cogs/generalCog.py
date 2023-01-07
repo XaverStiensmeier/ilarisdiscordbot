@@ -11,6 +11,31 @@ from cogs.general import parse_die
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(basic_paths.rjoin("manoeverkarten"))]
 
+GERMAN_HELP = """```
+Generelle Befehle:
+  card Nimmt einen Namen entgegen. Sendet ein Bild der angegebenen Regelkarte.
+  halloilaris Begrüßt den Ilaris Bot
+  ilaris Nimmt eine Zahl oder einen Namen entgegen. Postet die entsprechende Seite im Regelwerk oder Regel.
+  r Würfelt. Bspw. 2w6+3 wird zu 'Gib die Summe aus 2 geworfenen 6-seitigen Würfeln und 3 zurück'. Besonders:
+    I: Gibt 1w20 zurück. I+: Mit Schicksalspunkt. II+: Mit Schicksalspunkt und Eigenheit.
+    III: Gibt 2@3w20 zurück. III+: Mit Schicksalspunkt. III++: Mit Schicksalspunkt und Eigenheit.
+  what Nur für Admins: Ruft Debug-Informationen ab
+Gruppen Befehle:
+  gcreate Nimmt Gruppenname Datum "Maximale Spieleranzahl" und Beschreibung entgegen. Erzeugt eine neue Gruppe mit dir als GM. 
+  gdestroy Nimmt Gruppennamen (ohne deinen Nutzernamen) entgegen. Zerstört diese Gruppe, die du erstellt hast.
+  gjoin Nimmt Gruppennamen entgegen. Betritt diese Gruppe.
+  gleave Nimmt Gruppennamen entgegen. Verlässt diese Gruppe.
+  glist Listet alle beitretbaren Gruppen auf. Nimmt optional "True" entgegen und zeigt dann auch volle Gruppen an.
+  gremove Nimmt Gruppennamen (ohne deinen Nutzernamen) und Nutzernamen des Spielers entgegen. Entfernt diesen Spieler aus deiner Gruppe.
+  gset Nimmt Gruppennamen (ohne deinen Nutzernamen), ein Attribut und einen Wert entgegen. Weißt dem Attribut den Wert zu.
+  gsetdate Nimmt Gruppennamen (ohne deinen Nutzernamen) und Datum entgegen. Setzt das Datum.
+  gsetdescription Nimmt Gruppennamen (ohne deinen Nutzernamen) und Beschreibung entgegen. Setzt die Beschreibung.
+  gsetnumberofplayers Nimmt Gruppennamen (ohne deinen Nutzernamen) und maximale Spieler entgegen. Setzt die Anzahl der maximalen Spieler.
+
+Gib !help command ein, um weitere Informationen zu einem Befehl auf Englisch zu erhalten
+Anmerkung: Argumente mit Leerzeichen müssen in Anführungszeichen angegeben werden: "Das ist ein Argument"
+```
+"""
 
 class GeneralCommands(commands.Cog):
     """
@@ -72,30 +97,4 @@ class GeneralCommands(commands.Cog):
 
     @commands.command(help="Prints a German simplified help page")
     async def hilfe(self, ctx):
-        result = """
-        ```
-        **Generelle Befehle:**
-          card Nimmt einen Namen entgegen. Sendet ein Bild der angegebenen Regelkarte.
-          halloilaris Begrüßt den Ilaris Bot
-          ilaris Nimmt eine Zahl oder einen Namen entgegen. Postet die entsprechende Seite im Regelwerk oder Regel.
-          r Würfelt. Bspw. 2w6+3 wird zu 'Gib die Summe aus 2 geworfenen 6-seitigen Würfeln und 3 zurück'. Besonders:
-            I: Gibt 1w20 zurück. I+: Mit Schicksalspunkt. II+: Mit Schicksalspunkt und Eigenheit.
-            III: Gibt 2@3w20 zurück. III+: Mit Schicksalspunkt. III++: Mit Schicksalspunkt und Eigenheit.
-          what Nur für Admins: Ruft Debug-Informationen ab
-        **Gruppen Befehle:**
-          gcreate Erzeugt eine neue Gruppe mit dir als GM. Nimmt Name Datum "Maximale Spieleranzahl" und Beschreibung entgegen.
-          gdestroy Nimmt Gruppennamen (ohne deinen Nutzernamen) entgegen. Zerstört diese Gruppe, die du erstellt hast.
-          gjoin Nimmt Gruppennamen entgegen. Betritt diese Gruppe.
-          gleave Nimmt Gruppennamen entgegen. Verlässt diese Gruppe.
-          glist Listet alle beitretbaren Gruppen auf. Nimmt optional "True" entgegen und zeigt dann auch volle Gruppen an.
-          gremove Nimmt Gruppennamen (ohne deinen Nutzernamen) und Nutzernamen des Spielers entgegen. Entfernt diesen Spieler aus deiner Gruppe.
-          gset Nimmt einen Schlüssel und einen Wert entgegen. Weißt dem Schlüssel den Wert zu.
-          gsetdate Setzt das Datum.
-          gsetdescription Setzt die Beschreibung.
-          gsetnumberofplayers Setzt die Anzahl der maximalen Spieler.
-
-        Gib !help command ein, um weitere Informationen zu einem Befehl auf Englisch zu erhalten
-        Anmerkung: Argumente mit Leerzeichen müssen in Anführungszeichen angegeben werden: "Das ist ein Argument"
-        ```
-        """
-        await ctx.send(result)
+        await ctx.send(GERMAN_HELP)
