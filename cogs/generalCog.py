@@ -70,6 +70,7 @@ class GeneralCommands(commands.Cog):
         await ctx.author.send(file=discord.File(os.path.join(basic_paths.ROOT, "discord.log")))
         await ctx.author.send(file=discord.File(basic_paths.rjoin("groups/groups.yml")))
 
+    @commands.command(help="Prints a German simplified help page")
     async def hilfe(self, ctx):
         result = """
         ```
@@ -77,21 +78,24 @@ class GeneralCommands(commands.Cog):
           card Nimmt einen Namen entgegen. Sendet ein Bild der angegebenen Regelkarte.
           halloilaris Begrüßt den Ilaris Bot
           ilaris Nimmt eine Zahl oder einen Namen entgegen. Postet die entsprechende Seite im Regelwerk oder Regel.
-          r Würfelt. 
-          what Nur für Administratoren: Ruft Debug-Informationen ab
+          r Würfelt. Bspw. 2w6+3 wird zu 'Gib die Summe aus 2 geworfenen 6-seitigen Würfeln und 3 zurück'. Besonders:
+            I: Gibt 1w20 zurück. I+: Mit Schicksalspunkt. II+: Mit Schicksalspunkt und Eigenheit.
+            III: Gibt 2@3w20 zurück. III+: Mit Schicksalspunkt. III++: Mit Schicksalspunkt und Eigenheit.
+          what Nur für Admins: Ruft Debug-Informationen ab
         **Gruppen Befehle:**
-          gcreate Erzeugt eine neue Gruppe mit dir als GM.
-          gdestroy Zerstört eine Gruppe, die du erstellt hast.
-          gjoin Tritt einer Gruppe als maximum_players bei
-          gleave Verlasse eine Gruppe als maximum_players
-          glist Listet alle beitretbaren Gruppen auf.
-          gremove Entfernt einen maximum_players aus deiner Gruppe
-          gset Setzt einen Gruppenschlüssel.
+          gcreate Erzeugt eine neue Gruppe mit dir als GM. Nimmt Name Datum "Maximale Spieleranzahl" und Beschreibung entgegen.
+          gdestroy Nimmt Gruppennamen (ohne deinen Nutzernamen) entgegen. Zerstört diese Gruppe, die du erstellt hast.
+          gjoin Nimmt Gruppennamen entgegen. Betritt diese Gruppe.
+          gleave Nimmt Gruppennamen entgegen. Verlässt diese Gruppe.
+          glist Listet alle beitretbaren Gruppen auf. Nimmt optional "True" entgegen und zeigt dann auch volle Gruppen an.
+          gremove Nimmt Gruppennamen (ohne deinen Nutzernamen) und Nutzernamen des Spielers entgegen. Entfernt diesen Spieler aus deiner Gruppe.
+          gset Nimmt einen Schlüssel und einen Wert entgegen. Weißt dem Schlüssel den Wert zu.
           gsetdate Setzt das Datum.
           gsetdescription Setzt die Beschreibung.
-          gsetnumberofplayers Setzt die Anzahl der maximum_players.
+          gsetnumberofplayers Setzt die Anzahl der maximalen Spieler.
 
         Gib !help command ein, um weitere Informationen zu einem Befehl auf Englisch zu erhalten
+        Anmerkung: Argumente mit Leerzeichen müssen in Anführungszeichen angegeben werden: "Das ist ein Argument"
         ```
         """
         await ctx.send(result)
