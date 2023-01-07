@@ -35,7 +35,7 @@ class GeneralCommands(commands.Cog):
         else:
             await ctx.send(ilaris_database.get_database_entry(name=arg))
 
-    @commands.command(help="Posts an image of the rule card named by the argument.", aliases=['karte'])
+    @commands.command(help="Posts an image of a specified rule card.", aliases=['karte'])
     async def card(self, ctx, arg: str = commands.parameter(
         description="Name of rule card")):
         name, three_best = differ.closest_match(arg, cards)
@@ -46,12 +46,18 @@ class GeneralCommands(commands.Cog):
         else:
             await ctx.send("No such rule card...")
 
-    @commands.command(help="Rolls dice. e.g.\n"
-                           "2d6+3: Sum the result of 2 6-sided dice and 3.\n"
-                           "2@3d20: Roll 3d20 and take the median i.e. (20,15,5) => 15.\n"
-                           "Special rolls: I: 1d20, III: 2@3d20. Use 'I+' or 'III+' to indicate fate point usage. "
-                           "Use '++' with 'I++' or 'III++' to indicate fate point usage with an aspect.", aliases=['w'])
-    async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse.")):
+    @commands.command(help="Rolls dice.", aliases=['w'])
+    async def r(self, ctx,
+                roll: str = commands.parameter(default="III",
+                                               description="Dice string to parse. e.g.\n"
+                                                           "2d6+3: Sum the result of 2 "
+                                                           "6-sided dice and 3.\n"
+                                                           "2@3d20: Roll 3d20 and take the median i.e. "
+                                                           "(20,15,5) => 15.\n"
+                                                           "Special rolls: I: 1d20, III: 2@3d20. Use 'I+' or 'III+' "
+                                                           "to indicate fate point usage. "
+                                                           "Use '++' with 'I++' or 'III++' to indicate fate point "
+                                                           "usage with an aspect.")):
         named_rolls = {"I": "1d20", "III": "2@3d20", "I+": "1@2d20", "I++": "1@3d20", "III+": "2@4d20",
                        "III++": "2@5d20",
                        "+": "2@4d20", "++": "2@5d20"}

@@ -22,14 +22,10 @@ class GroupCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(help="Creates a new group with yourself as the GM. Arguments:\n"
-                           "group: Name of your group. Fancy signs will be removed.\n"
-                           "date: When you want to play.\n"
-                           "maximum_players: Maximum number of players allowed. Group is no longer joinable when full\n"
-                           "description: Describe what your game is about. Write within \" \" if you use spaces.",
+    @commands.command(help="Creates a new group with yourself as the GM.",
                       aliases=['gneu'])
     async def gcreate(self, ctx, group: str = commands.parameter(description="Your group to create"),
-                      date: str = commands.parameter(
+                      time: str = commands.parameter(
                           description="Time to play in GMT+1 (for example '25.02.23 14:00')"),
                       maximum_players: int = commands.parameter(
                           default=4, description="Maximum number of players"),
@@ -37,7 +33,7 @@ class GroupCommands(commands.Cog):
                                                             description="Description for your soon-to-be players")):
         group_name = sanitize_group_name(group, ctx.author)
         status, result_str = organize_group.create_group(
-            group_name, date, maximum_players, description)
+            group_name, time, maximum_players, description)
         everyone = ctx.guild.default_role
 
         if status:
@@ -66,14 +62,13 @@ class GroupCommands(commands.Cog):
             logging.debug(f"Created voice channel {voice_channel}")
         await ctx.send(result_str)
 
-    @commands.command(help="Lists all joinable groups. Use argument 'True' to show full groups, too.",
-                      aliases=['gliste'])
+    @commands.command(help="Lists all joinable groups.",aliases=['gliste'])
     async def glist(self, ctx,
                     full: bool = commands.parameter(default=False, description="'True' to show full groups, too")):
         result_str = organize_group.list_groups(full)
         await ctx.send(result_str)
 
-    @commands.command(help="Destroys a group that you've created. Takes the name of your group without your username.",
+    @commands.command(help="Destroys a group that you've created.",
                       aliases=['gentfernen'])
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = sanitize_group_name(group_prefix, ctx.author)
@@ -100,15 +95,12 @@ class GroupCommands(commands.Cog):
 
         await ctx.send(result_str)
 
-    @commands.command(
-        help="Sets a group key. Takes two arguments:\n"
-             f"key to set: Like '{organize_group.DATE}', '{organize_group.PLAYER_NUMBER}' or "
-             f"'{organize_group.DESCRIPTION}'.\n"
-             "value: The value you would like to set the key to.",
+    @commands.command(help="Sets a group key.",
         aliases=['gsetze'])
     async def gset(self, ctx, group_prefix: str = commands.parameter(description="Your group (without username)"),
                    key: str = commands.parameter(
-                       description="Key to set"),
+                       description=f"Key to set. For example: {organize_group.DATE},{organize_group.DESCRIPTION} or "
+                                   f"{organize_group.PLAYER_NUMBER}"),
                    value: str = commands.parameter(
                        description="Value to set the key to")):
         group = sanitize_group_name(group_prefix, ctx.author)
@@ -116,9 +108,7 @@ class GroupCommands(commands.Cog):
         await ctx.send(result_str)
 
     @commands.command(
-        help="Sets date. Expects:\n"
-             "group_prefix: Your group without your username\n"
-             "date: When you want to play.",
+        help="Sets date.",
         aliases=['gsetzedatum'])
     async def gsetdate(self, ctx, group_prefix: str = commands.parameter(description="Your group (without username)"),
                        value: str = commands.parameter(
@@ -128,12 +118,9 @@ class GroupCommands(commands.Cog):
         await ctx.send(result_str)
 
     @commands.command(
-        help="Sets description. Expects:\n"
-             "group_prefix: Your group without your username\n"
-             "description: Describe what your game is about. Write within \" \" if you use spaces.",
+        help="Sets description.",
         aliases=['gsetzebeschreibung'])
-    async def gsetdescription(self, ctx,
-                              group_prefix: str = commands.parameter(description="Your group (without username)"),
+    async def gsetdescription(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)"),
                               value: str = commands.parameter(
                                   description="New description")):
         group = sanitize_group_name(group_prefix, ctx.author)
@@ -141,21 +128,18 @@ class GroupCommands(commands.Cog):
         await ctx.send(result_str)
 
     @commands.command(
-        help="Sets maximum_players number. Expects:\n"
-             "group_prefix: Your group without your username\n"
-             "maximum_players: Maximum number of players allowed. Group is no longer joinable when full\n",
+        help="Sets maximum_players number.",
         aliases=['gsetzespieleranzahl'])
     async def gsetnumberofplayers(self, ctx,
-                                  group_prefix: str = commands.parameter(description="Your group (without username)"),
+                                  group_prefix: str = commands.parameter(description="Your group (short name)"),
                                   value: str = commands.parameter(
                                       description="New number of players")):
         group = sanitize_group_name(group_prefix, ctx.author)
         result_str = organize_group.set_key(group, organize_group.PLAYER_NUMBER, value)
         await ctx.send(result_str)
 
-    @commands.command(help="Removes a player from your group with argument as your group without your username",
-                      aliases=['gkick'])
-    async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your group (without username)"),
+    @commands.command(help="Removes a maximum_players from your group", aliases=['gkick'])
+    async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
                       player: discord.Member = commands.parameter(description="Player to remove.")):
         group = sanitize_group_name(group_prefix, ctx.author)
         status, result_str = organize_group.remove_player(group, player)
@@ -173,7 +157,7 @@ class GroupCommands(commands.Cog):
 
         await ctx.send(result_str)
 
-    @commands.command(help="Join a group with argument as group name", aliases=['gbeitreten'])
+    @commands.command(help="Join a group as a maximum_players", aliases=['gbeitreten'])
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
         group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
 
@@ -192,7 +176,7 @@ class GroupCommands(commands.Cog):
 
         await ctx.send(result_str)
 
-    @commands.command(help="Leave group with argument as group name", aliases=['gaustreten'])
+    @commands.command(help="Leave a group as a maximum_players", aliases=['gaustreten'])
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
         group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
         status, result_str = organize_group.remove_self(group, str(ctx.author))
