@@ -58,15 +58,15 @@ class GroupCommands(commands.Cog):
                                                                  overwrites=overwrites,
                                                                  category=category)
 
-            await text_channel.send(f"Hey, <@{ctx.author.id}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt.")
+            await text_channel.reply(f"Hey, <@{ctx.author.id}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt.")
             logging.debug(f"Created voice channel {voice_channel}")
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
 
     @commands.command(help="Lists all joinable groups.",aliases=['gliste'])
     async def glist(self, ctx,
                     full: bool = commands.parameter(default=False, description="'True' to show full groups, too")):
         for result_str in organize_group.list_groups(full):
-            await ctx.send(result_str)
+            await ctx.reply(result_str)
 
     @commands.command(help="Destroys a group that you've created.",
                       aliases=['gentfernen'])
@@ -93,7 +93,7 @@ class GroupCommands(commands.Cog):
                     await channel.delete()
                     logging.debug(f"Deleted channel {channel}.")
 
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
 
     @commands.command(help="Sets a group key.",
         aliases=['gsetze'])
@@ -105,7 +105,7 @@ class GroupCommands(commands.Cog):
                        description="Value to set the key to")):
         group = sanitize_group_name(group_prefix, ctx.author)
         result_str = organize_group.set_key(group, key, value)
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
 
     @commands.command(
         help="Sets date.",
@@ -115,7 +115,7 @@ class GroupCommands(commands.Cog):
                            description="New date")):
         group = sanitize_group_name(group_prefix, ctx.author)
         result_str = organize_group.set_key(group, organize_group.DATE, value)
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
 
     @commands.command(
         help="Sets description.",
@@ -125,7 +125,7 @@ class GroupCommands(commands.Cog):
                                   description="New description")):
         group = sanitize_group_name(group_prefix, ctx.author)
         result_str = organize_group.set_key(group, organize_group.DESCRIPTION, value)
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
 
     @commands.command(
         help="Sets maximum_players number.",
@@ -136,7 +136,7 @@ class GroupCommands(commands.Cog):
                                       description="New number of players")):
         group = sanitize_group_name(group_prefix, ctx.author)
         result_str = organize_group.set_key(group, organize_group.PLAYER_NUMBER, value)
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
 
     @commands.command(help="Removes a maximum_players from your group", aliases=['gkick'])
     async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
@@ -155,7 +155,7 @@ class GroupCommands(commands.Cog):
             text_channel = discord.utils.get(ctx.guild.text_channels, name=group)
             await text_channel.send(f"Verabschiedet <@{player.id}>.")
 
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
 
     @commands.command(help="Join a group as a maximum_players", aliases=['gbeitreten'])
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
@@ -174,7 +174,7 @@ class GroupCommands(commands.Cog):
             text_channel = discord.utils.get(ctx.guild.text_channels, name=group)
             await text_channel.send(f"Begrüßt <@{ctx.author.id}>!")
 
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
 
     @commands.command(help="Leave a group as a maximum_players", aliases=['gaustreten'])
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
@@ -191,4 +191,4 @@ class GroupCommands(commands.Cog):
             text_channel = discord.utils.get(ctx.guild.text_channels, name=group)
             await text_channel.send(f"Verabschiedet <@{ctx.author.id}>.")
 
-        await ctx.send(result_str)
+        await ctx.reply(result_str)
