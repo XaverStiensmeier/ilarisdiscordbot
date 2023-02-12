@@ -62,7 +62,7 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_command(ctx):
-    logging.info("'{}' used '{}' on '{}' in '{}'".format(ctx.author, ctx.message, ctx.guild.name, ctx.channel))
+    logging.info("'{}' used '{}' on '{}' in '{}'".format(ctx.author, ctx.message.content, ctx.guild.name, ctx.channel))
     if ctx.command.cog_name == "GroupCommands" and ctx.command.name not in NO_UPDATE_COMMAND_LIST:
         channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
         if channel:
