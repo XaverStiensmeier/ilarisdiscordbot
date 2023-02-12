@@ -58,7 +58,7 @@ class GroupCommands(commands.Cog):
                                                                  overwrites=overwrites,
                                                                  category=category)
 
-            await text_channel.reply(f"Hey, <@{ctx.author.id}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt.")
+            await text_channel.send(f"Hey, <@{ctx.author.id}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt.")
             logging.debug(f"Created voice channel {voice_channel}")
         await ctx.reply(result_str)
 
