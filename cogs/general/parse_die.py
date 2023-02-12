@@ -40,5 +40,5 @@ def parse_die(text):
                 modification += int(elem)
             text = arguments[0]
     if text[0].isdigit():
-        values = re.split("d|w",text.lower())
+        values = re.split("d|w", text.lower())
         return roll_die(values[0], at, values[1], modification)

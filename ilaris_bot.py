@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # Imports
-import discord
-from discord.ext import commands
 import logging
 import logging.handlers
+import traceback
+
+import discord
+from discord.ext import commands
+
 import basic_paths
 from cogs.generalCog import GeneralCommands
-from cogs.groupsCog import GroupCommands
 from cogs.group import organize_group
-import traceback
+from cogs.groupsCog import GroupCommands
 
 NO_UPDATE_COMMAND_LIST = ["glist"]
 
@@ -71,5 +73,6 @@ async def on_command(ctx):
                 await channel.send(result_str)
         else:
             logging.info("No group channel found.")
+
 
 bot.run(token)  # , log_handler=handler

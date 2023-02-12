@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import logging
+import re
 
 import discord
 from discord.ext import commands
 from discord.utils import get
 
 from cogs.group import organize_group
-import re
 
 
 def sanitize_group_name(group_prefix, author):
@@ -62,7 +62,7 @@ class GroupCommands(commands.Cog):
             logging.debug(f"Created voice channel {voice_channel}")
         await ctx.reply(result_str)
 
-    @commands.command(help="Lists all joinable groups.",aliases=['gliste'])
+    @commands.command(help="Lists all joinable groups.", aliases=['gliste'])
     async def glist(self, ctx,
                     full: bool = commands.parameter(default=False, description="'True' to show full groups, too")):
         for result_str in organize_group.list_groups(full):
@@ -96,7 +96,7 @@ class GroupCommands(commands.Cog):
         await ctx.reply(result_str)
 
     @commands.command(help="Sets a group key.",
-        aliases=['gsetze'])
+                      aliases=['gsetze'])
     async def gset(self, ctx, group_prefix: str = commands.parameter(description="Your group (without username)"),
                    key: str = commands.parameter(
                        description=f"Key to set. For example: {organize_group.DATE},{organize_group.DESCRIPTION} or "
@@ -161,7 +161,7 @@ class GroupCommands(commands.Cog):
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
         group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
 
-        if group.endswith(str(ctx.author).replace("#","").lower()):
+        if group.endswith(str(ctx.author).replace("#", "").lower()):
             status, result_str = False, "You can't join your own group."
         else:
             status, result_str = organize_group.add_self(group, str(ctx.author))
