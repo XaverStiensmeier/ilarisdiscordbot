@@ -66,7 +66,7 @@ class GeneralCommands(commands.Cog):
         description="Name of rule card")):
         name, three_best = differ.closest_match(arg, cards)
         if name:
-            await ctx.send(file=discord.File(basic_paths.rjoin(f"manoeverkarten/{name}.png")))
+            await ctx.reply(file=discord.File(basic_paths.rjoin(f"manoeverkarten/{name}.png")))
             if three_best:
                 await ctx.reply(f"Die drei besten Matches sind: {three_best}")
         else:
