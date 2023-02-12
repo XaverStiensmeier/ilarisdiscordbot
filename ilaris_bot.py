@@ -70,7 +70,8 @@ async def on_command(ctx):
         channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
         if channel:
             await channel.purge()
-            await channel.send(organize_group.list_groups())
+            for result_str in organize_group.list_groups():
+                await channel.send(result_str)
         else:
             logging.info("No group channel found.")
 

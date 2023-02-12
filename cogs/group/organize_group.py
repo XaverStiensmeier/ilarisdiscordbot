@@ -30,14 +30,17 @@ with open(basic_paths.rjoin("groups/groups.yml"), "r") as yaml_file:
 
 def list_groups(show_full=False):
     return_str = "**- Gruppen Liste -**\n"
+    return_strs = [return_str]
     for group, daten in groups.items():
+        return_str = ""
         if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
             return_str += f"**--- {group} ---**\n"
             return_str += f"{DESCRIPTION}: {daten[DESCRIPTION]}\n"
             return_str += f"{DATE}: {daten[DATE]}\n"
             return_str += f"{PLAYER_NUMBER}: ({len(daten[PLAYER])}/{daten[PLAYER_NUMBER]})\n"
             return_str += f"Zum Beitreten: `!gjoin {group}`\n\n"
-    return return_str
+            return_strs.append(return_str)
+    return return_strs
 
 
 def create_group(group, date, player_number=4, description=""):

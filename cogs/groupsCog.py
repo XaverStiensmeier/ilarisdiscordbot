@@ -65,8 +65,8 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Lists all joinable groups.",aliases=['gliste'])
     async def glist(self, ctx,
                     full: bool = commands.parameter(default=False, description="'True' to show full groups, too")):
-        result_str = organize_group.list_groups(full)
-        await ctx.send(result_str)
+        for result_str in organize_group.list_groups(full):
+            await ctx.send(result_str)
 
     @commands.command(help="Destroys a group that you've created.",
                       aliases=['gentfernen'])
