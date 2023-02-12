@@ -56,16 +56,13 @@ async def on_command_error(ctx, error):
             info = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
         else:
             info = "Unexpected Error."
-        await ctx.send(f"Command Execution failed\n{info}")
+        await ctx.send(f"Command Execution failed: {info}")
     raise error
 
 
 @bot.event
 async def on_command(ctx):
-    server = ctx.guild.name
-    user = ctx.author
-    command = ctx.command
-    logging.info("'{}' used '{}' in '{}'".format(user, command, server))
+    logging.info("'{}' used '{}' on '{}' in '{}'".format(ctx.author, ctx.command, ctx.guild.name, ctx.channel))
     if ctx.command.cog_name == "GroupCommands" and ctx.command.name not in NO_UPDATE_COMMAND_LIST:
         channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
         if channel:
