@@ -48,18 +48,18 @@ class GeneralCommands(commands.Cog):
 
     @commands.command(help="Greets the Ilaris Bot.")
     async def helloilaris(self, ctx):
-        await ctx.send('Hello User!')
+        await ctx.reply(f"Hey, <@{ctx.author.id}>!")
 
     @commands.command(help="Posts an image of the given page if argument is numeric. Else the database entry.")
     async def ilaris(self, ctx, arg: str = commands.parameter(
         description="Number or database entry (for example 4 or 'Duplicatus')")):
         if arg.isnumeric() and int(arg):
             if 219 >= int(arg) > 0:
-                await ctx.send(file=discord.File(basic_paths.rjoin(f"ilaris/ilaris-{arg.zfill(3)}.png")))
+                await ctx.reply(file=discord.File(basic_paths.rjoin(f"ilaris/ilaris-{arg.zfill(3)}.png")))
             else:
-                await ctx.send("Ilaris only has 219 pages.")
+                await ctx.reply("Ilaris only has 219 pages.")
         else:
-            await ctx.send(ilaris_database.get_database_entry(name=arg))
+            await ctx.reply(ilaris_database.get_database_entry(name=arg))
 
     @commands.command(help="Posts an image of a specified rule card.", aliases=['karte'])
     async def card(self, ctx, arg: str = commands.parameter(
@@ -68,9 +68,9 @@ class GeneralCommands(commands.Cog):
         if name:
             await ctx.send(file=discord.File(basic_paths.rjoin(f"manoeverkarten/{name}.png")))
             if three_best:
-                await ctx.send(f"Die drei besten Matches sind: {three_best}")
+                await ctx.reply(f"Die drei besten Matches sind: {three_best}")
         else:
-            await ctx.send("No such rule card...")
+            await ctx.reply("No such rule card...")
 
     @commands.command(help="Rolls dice.\n"
                            "2d6+3: Sum the result of 2 6-sided dice and 3.\n"
@@ -88,8 +88,8 @@ class GeneralCommands(commands.Cog):
                        "+": "2@4d20", "++": "2@5d20"}
         if roll in named_rolls:
             roll = named_rolls[roll]
-            await ctx.send(f"Rolling {roll}")
-        await ctx.send(parse_die.parse_die(roll))
+            await ctx.reply(f"Rolling {roll}")
+        await ctx.reply(parse_die.parse_die(roll))
 
     @commands.command(help="Admin only: Gets debug information")
     @commands.has_permissions(administrator=True)
@@ -99,4 +99,4 @@ class GeneralCommands(commands.Cog):
 
     @commands.command(help="Prints a German simplified help page")
     async def hilfe(self, ctx):
-        await ctx.send(GERMAN_HELP)
+        await ctx.reply(GERMAN_HELP)
