@@ -12,10 +12,11 @@ DATE = "uhrzeit"
 DESCRIPTION = "beschreibung"
 PLAYER = "spieler"
 
+def save_groups_yaml(path="groups/groups.yml"):
+    with open(basic_paths.rjoin(path), "w+") as yaml_file:
+        yaml.safe_dump(groups, yaml_file)
 
 def sigterm_handler(_signo, _stack_frame):
-    with open(basic_paths.rjoin("groups/groups.yml"), "w+") as yaml_file:
-        yaml.safe_dump(groups, yaml_file)
     sys.exit(0)
 
 
