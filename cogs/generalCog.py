@@ -10,7 +10,7 @@ from cogs.general import ilaris_database
 from cogs.general import parse_die
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(basic_paths.rjoin("manoeverkarten"))]
-NAMED_ROLLS = [("III''", "2@5d20"), ("III'", "2@4d20"), ("I''", "1@3d20"), ("I'", "1@2d20"), ("III", "2@3d20"),
+NAMED_ROLLS = [("III°°", "2@5d20"), ("III°", "2@4d20"), ("I°°", "1@3d20"), ("I°", "1@2d20"), ("III", "2@3d20"),
                ("I", "1d20")]
 GERMAN_HELP = """```
 Generelle Befehle:
@@ -18,8 +18,8 @@ Generelle Befehle:
   halloilaris Begrüßt den Ilaris Bot
   ilaris Nimmt eine Zahl oder einen Namen entgegen. Postet die entsprechende Seite im Regelwerk oder Regel.
   r Würfelt. Bspw. 2w6+3 wird zu 'Gib die Summe aus 2 geworfenen 6-seitigen Würfeln und 3 zurück'. Besonders:
-    I: Gibt 1w20 zurück. I+: Mit Schicksalspunkt. II+: Mit Schicksalspunkt und Eigenheit.
-    III: Gibt 2@3w20 zurück. III+: Mit Schicksalspunkt. III++: Mit Schicksalspunkt und Eigenheit.
+    I: Gibt 1w20 zurück. I°: Mit Schicksalspunkt. I°°: Mit Schicksalspunkt und Eigenheit.
+    III: Gibt 2@3w20 zurück. III°: Mit Schicksalspunkt. III°°: Mit Schicksalspunkt und Eigenheit.
   what Nur für Admins: Ruft Debug-Informationen ab
 Gruppen Befehle:
   gcreate Nimmt Gruppenname Datum "Maximale Spieleranzahl" und Beschreibung entgegen. Erzeugt eine neue Gruppe mit dir als GM. 
@@ -76,7 +76,7 @@ class GeneralCommands(commands.Cog):
                            "2d6+3: Sum the result of 2 6-sided dice and 3.\n"
                            "2@3d20: Roll 3d20 and take the second highest i.e. (20,15,5) => 15.\n"
                            "Special rolls:\n"
-                           "I: 1d20, I*: 1@2d20, I** 1@3d20\n"
+                           "I: 1d20, I°: 1@2d20, I°° 1@3d20\n"
                            "III: 2@3d20, III': 2@4d20, III'' 2@5d20\n", aliases=['w'])
     async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse."),
                 show: str = commands.parameter(default=False, description="Shows roll results string if True.")):
