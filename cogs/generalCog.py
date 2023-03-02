@@ -10,7 +10,8 @@ from cogs.general import ilaris_database
 from cogs.general import parse_die
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(basic_paths.rjoin("manoeverkarten"))]
-
+NAMED_ROLLS = [("III''", "2@5d20"), ("III'", "2@4d20"), ("I''", "1@3d20"), ("I'", "1@2d20"), ("III", "2@3d20"),
+               ("I", "1d20")]
 GERMAN_HELP = """```
 Generelle Befehle:
   card Nimmt einen Namen entgegen. Sendet ein Bild der angegebenen Regelkarte.
@@ -62,8 +63,7 @@ class GeneralCommands(commands.Cog):
             await ctx.reply(ilaris_database.get_database_entry(name=arg))
 
     @commands.command(help="Posts an image of a specified rule card.", aliases=['karte'])
-    async def card(self, ctx, arg: str = commands.parameter(
-        description="Name of rule card")):
+    async def card(self, ctx, arg: str = commands.parameter(description="Name of rule card")):
         name, three_best = differ.closest_match(arg, cards)
         if name:
             await ctx.reply(file=discord.File(basic_paths.rjoin(f"manoeverkarten/{name}.png")))
@@ -77,15 +77,12 @@ class GeneralCommands(commands.Cog):
                            "2@3d20: Roll 3d20 and take the second highest i.e. (20,15,5) => 15.\n"
                            "Special rolls:\n"
                            "I: 1d20, I*: 1@2d20, I** 1@3d20\n"
-                           "III: 2@3d20, III*: 2@4d20, III** 2@5d20\n",
-                      aliases=['w'])
-    async def r(self, ctx,
-                roll: str = commands.parameter(default="III",
-                                               description="Dice string to parse."),
+                           "III: 2@3d20, III': 2@4d20, III'' 2@5d20\n", aliases=['w'])
+    async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse."),
                 show: str = commands.parameter(default=False, description="Shows roll results string if True.")):
-        named_rolls = [("III**", "2@5d20"), ("III*", "2@4d20"), ("I**", "1@3d20"), ("I*", "1@2d20"), ("III", "2@3d20"), ("I","1d20")]
+        roll = roll.replace(" ", "")
         new_roll = roll
-        for key, value in named_rolls:
+        for key, value in NAMED_ROLLS:
             new_roll = new_roll.replace(key, value)
         if roll != new_roll and show:
             await ctx.reply(f"Rolling {new_roll}")
