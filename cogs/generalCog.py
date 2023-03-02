@@ -76,24 +76,24 @@ class GeneralCommands(commands.Cog):
                            "2d6+3: Sum the result of 2 6-sided dice and 3.\n"
                            "2@3d20: Roll 3d20 and take the second highest i.e. (20,15,5) => 15.\n"
                            "Special rolls:\n"
-                           "I: 1d20, I+: 1@2d20, I++ 1@3d20\n"
-                           "III: 2@3d20, III+: 2@4d20, III++ 2@5d20\n"
-                           "+ indicates fate point usage, ++ indicates fate point usage with a fitting aspect.",
+                           "I: 1d20, I*: 1@2d20, I** 1@3d20\n"
+                           "III: 2@3d20, III*: 2@4d20, III** 2@5d20\n",
                       aliases=['w'])
     async def r(self, ctx,
                 roll: str = commands.parameter(default="III",
                                                description="Dice string to parse."),
-                show: str = commands.parameter(default=False, description="Shows roll results if True.")):
-        named_rolls = {"I": "1d20", "III": "2@3d20", "I*": "1@2d20", "I**": "1@3d20", "III*": "2@4d20",
-                       "III**": "2@5d20",
-                       "+": "2@4d20", "++": "2@5d20"}
-        if roll in named_rolls:
-            roll = named_rolls[roll]
-            await ctx.reply(f"Rolling {roll}")
-        throws, result = parse_die.parse_die(roll)
+                show: str = commands.parameter(default=False, description="Shows roll results string if True.")):
+        named_rolls = [("III**", "2@5d20"), ("III*", "2@4d20"), ("I**", "1@3d20"), ("I*", "1@2d20"), ("III", "2@3d20"), ("I","1d20")]
+        new_roll = roll
+        for key, value in named_rolls:
+            new_roll = new_roll.replace(key, value)
+        if roll != new_roll and show:
+            await ctx.reply(f"Rolling {new_roll}")
+        roll = new_roll
+        total_result_str, total_result = parse_die.parse_roll(roll)
         if show:
-            result = f"{throws}: {result}"
-        await ctx.reply(result)
+            total_result = f"{total_result} -- `{total_result_str}`"
+        await ctx.reply(total_result)
 
     @commands.command(help="Admin only: Gets debug information")
     @commands.has_permissions(administrator=True)
