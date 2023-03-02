@@ -12,12 +12,14 @@ def roll_die(n, at, sides, modification):
     for elem in range(int(n)):
         current = random.randint(1, int(sides))
         throws.append(current)
-        summation += current
+        if not at:
+            summation += current
+    throws.sort(reverse=True)
     if at:
-        throws.sort(reverse=True)
-        return throws[at - 1]
+        print(throws)
+        return throws, modification+throws[max(0,min(len(throws),at)) - 1]
     else:
-        return summation
+        return throws, summation
 
 
 def parse_die(text):
