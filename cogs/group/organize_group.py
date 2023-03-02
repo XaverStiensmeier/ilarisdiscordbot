@@ -12,9 +12,11 @@ DATE = "uhrzeit"
 DESCRIPTION = "beschreibung"
 PLAYER = "spieler"
 
+
 def save_groups_yaml(path="groups/groups.yml"):
     with open(basic_paths.rjoin(path), "w+") as yaml_file:
         yaml.safe_dump(groups, yaml_file)
+
 
 def sigterm_handler(_signo, _stack_frame):
     sys.exit(0)
@@ -56,9 +58,9 @@ def create_group(group, date, player_number=4, description=""):
 
 def destroy_group(group):
     if groups.get(group):
-        groups.pop(group)
-        return 1, "Deine Gruppe wurde gelöscht."
-    return False, "Deine Gruppe existiert nicht."
+        group = groups.pop(group)
+        return 1, "Deine Gruppe wurde gelöscht.", group[PLAYER]
+    return False, "Deine Gruppe existiert nicht.", []
 
 
 def set_key(group, key, value):

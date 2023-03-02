@@ -72,7 +72,7 @@ class GroupCommands(commands.Cog):
                       aliases=['gentfernen'])
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = sanitize_group_name(group_prefix, ctx.author)
-        status, result_str = organize_group.destroy_group(group_name)
+        status, result_str, players = organize_group.destroy_group(group_name)
         # if status, delete channels and role
         status = True
         if status:
@@ -92,7 +92,10 @@ class GroupCommands(commands.Cog):
                 if str(channel) == group_name:
                     await channel.delete()
                     logging.debug(f"Deleted channel {channel}.")
-
+        for player in players:
+            name, discriminator = player.split("#")
+            user = discord.utils.get(ctx.guild.members, name=name, discriminator=discriminator)
+            await user.send(f"{ctx.author} hat die Gruppe {group_name} gelöscht. Du bist daher kein Mitglied mehr.")
         await ctx.reply(result_str)
 
     @commands.command(help="Sets a group key.",
@@ -138,7 +141,7 @@ class GroupCommands(commands.Cog):
         result_str = organize_group.set_key(group, organize_group.PLAYER_NUMBER, value)
         await ctx.reply(result_str)
 
-    @commands.command(help="Removes a maximum_players from your group", aliases=['gkick'])
+    @commands.command(help="Removes a player from your group", aliases=['gkick'])
     async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
                       player: discord.Member = commands.parameter(description="Player to remove.")):
         group = sanitize_group_name(group_prefix, ctx.author)
