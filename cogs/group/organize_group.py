@@ -3,7 +3,6 @@
 import signal
 import sys
 import os
-import basic_paths
 
 import yaml
 
@@ -11,10 +10,11 @@ PLAYER_NUMBER = "spieleranzahl"
 DATE = "uhrzeit"
 DESCRIPTION = "beschreibung"
 PLAYER = "spieler"
+GROUPS_PATH = os.path.join("resources", "groups.yml")
 
 
 def save_groups_yaml(guild):
-    with open(os.path.join(f"groups", f"{guild}.yml"), "w+") as file:
+    with open(GROUPS_PATH, "w+") as file:
         yaml.safe_dump(groups, file)
 
 
@@ -28,14 +28,15 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 groups = {}
 
 ALLOWED_KEYS = [DATE, PLAYER_NUMBER, DESCRIPTION]
-for yml in os.listdir(os.path.join("resources", "groups")):
-    with open(os.path.join("resources", "groups", yml), "r") as yaml_file:
-        guild_txt = os.path.splitext(yml)[0]
-        groups[guild_txt] = yaml.safe_load(yaml_file) or {}
+
+# LOAD GROUPS
+if os.path.isfile(GROUPS_PATH):
+    with open(GROUPS_PATH, "r") as yaml_file:
+        groups = yaml.safe_load(yaml_file)
 
 
 def list_groups(guild, show_full=False):
-    guild_groups = groups[guild]
+    guild_groups = groups.get(guild, {})
     return_str = "**\- Gruppen Liste -**\n"
     return_strs = [return_str]
     for group, daten in guild_groups.items():
@@ -51,9 +52,9 @@ def list_groups(guild, show_full=False):
 
 
 def create_group(guild, group, date, player_number=4, description=""):
-    guild_groups = groups[guild]
+    guild_groups = groups.get(guild, {})
     if guild_groups.get(group):
-        return 0, "Deine Gruppe existiert bereits."
+        return False, "Deine Gruppe existiert bereits."
     guild_groups[group] = {DATE: date, PLAYER_NUMBER: player_number, DESCRIPTION: description, PLAYER: []}
     return_str = f"Neue Gruppe {group} angelegt.\n"
     return_str += f"Zum Gruppe entfernen: `!gdestroy {'_'.join(group.split('_')[:-1])}`\n"
@@ -62,7 +63,7 @@ def create_group(guild, group, date, player_number=4, description=""):
 
 
 def destroy_group(guild, group):
-    guild_groups = groups[guild]
+    guild_groups = groups.get(guild, {})
     if guild_groups.get(group):
         group_dict = guild_groups.pop(group)
         return 1, "Deine Gruppe wurde gelöscht.", group_dict[PLAYER]
@@ -70,7 +71,7 @@ def destroy_group(guild, group):
 
 
 def set_key(guild, group, key, value):
-    guild_groups = groups[guild]
+    guild_groups = groups.get(guild, {})
     if guild_groups.get(group):
         if key in ALLOWED_KEYS:
             guild_groups[group][key] = value
@@ -82,7 +83,7 @@ def set_key(guild, group, key, value):
 
 
 def remove_player(guild, group, player):
-    guild_groups = groups[guild]
+    guild_groups = groups.get(guild, {})
     if guild_groups.get(group):
         if player in guild_groups[group][PLAYER]:
             guild_groups[group][PLAYER].remove(player)
@@ -94,7 +95,7 @@ def remove_player(guild, group, player):
 
 
 def add_self(guild, group, player):
-    guild_groups = groups[guild]
+    guild_groups = groups.get(guild, {})
     if guild_groups.get(group):
         if player not in guild_groups[group][PLAYER]:
             current_player_number = len(guild_groups[group][PLAYER])
@@ -113,7 +114,7 @@ def add_self(guild, group, player):
 
 
 def remove_self(guild, group, player):
-    guild_groups = groups[guild]
+    guild_groups = groups.get(guild, {})
     if guild_groups.get(group):
         if player in guild_groups[group][PLAYER]:
             guild_groups[group][PLAYER].remove(player)

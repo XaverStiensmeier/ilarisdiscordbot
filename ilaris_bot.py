@@ -82,11 +82,11 @@ async def on_command_error(ctx, error):
 async def on_command(ctx):
     logging.info("'{}' used '{}' on '{}' in '{}'".format(ctx.author, ctx.message.content, ctx.guild.name, ctx.channel))
     if ctx.command.cog_name == "GroupCommands" and ctx.command.name not in NO_UPDATE_COMMAND_LIST:
-        organize_group.save_groups_yaml()
+        organize_group.save_groups_yaml(ctx.guild)
         channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
         if channel:
             await channel.purge()
-            for result_str in organize_group.list_groups():
+            for result_str in organize_group.list_groups(ctx.guild):
                 await channel.send(result_str)
         else:
             logging.info("No group channel found.")
