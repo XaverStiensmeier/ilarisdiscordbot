@@ -7,15 +7,8 @@ from discord.ext import commands
 from discord.utils import get
 
 from cogs.group import organize_group
-
-
-def sanitize_group_name(group_prefix, author):
-    group_name = f"{group_prefix}_{author}"
-    return re.sub('[^0-9a-zA-Z\-_]+', '', group_name.replace(" ", "-")).lower()
-
-
-def sanitize_guild(guild):
-    return re.sub('[^0-9a-zA-Z\-_]+', '', guild.name.replace(" ", "-")).lower()
+from utility.sanitizer import sanitize_guild
+from utility.sanitizer import sanitize_group_name
 
 
 class GroupCommands(commands.Cog):
@@ -76,6 +69,36 @@ class GroupCommands(commands.Cog):
                       aliases=['gentfernen'])
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = sanitize_group_name(group_prefix, ctx.author)
+        status, result_str, players = organize_group.destroy_group(sanitize_guild(ctx.guild), group_name)
+        # if status, delete channels and role
+        status = True
+        if status:
+            # remove role
+            role = discord.utils.get(ctx.guild.roles, name=group_name)
+            if role:
+                await role.delete()
+                logging.debug(f"Deleted role {role}.")
+
+            # remove category
+            category = discord.utils.get(ctx.guild.categories, name=group_name)
+            if category:
+                await category.delete()
+                logging.debug(f"Deleted category {category}.")
+            # remove channels
+            for channel in ctx.guild.channels:
+                if str(channel) == group_name:
+                    await channel.delete()
+                    logging.debug(f"Deleted channel {channel}.")
+        for player in players:
+            name, discriminator = player.split("#")
+            user = discord.utils.get(ctx.guild.members, name=name, discriminator=discriminator)
+            await user.send(f"{ctx.author} hat die Gruppe {group_name} gelöscht. Du bist daher kein Mitglied mehr.")
+        await ctx.reply(result_str)
+
+    @commands.command(help="Purges a group.",
+                      aliases=['gbereinigen'])
+    @commands.has_permissions(administrator=True)
+    async def gpurge(self, ctx, group_name: str = commands.parameter(description="Group (full name)")):
         status, result_str, players = organize_group.destroy_group(sanitize_guild(ctx.guild), group_name)
         # if status, delete channels and role
         status = True

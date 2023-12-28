@@ -71,4 +71,4 @@ class GeneralCommands(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def what(self, ctx):
         await ctx.author.send(file=discord.File(os.path.join(basic_paths.ROOT, "discord.log")))
-        await ctx.author.send(file=discord.File(basic_paths.rjoin("groups/groups.yml")))
+        await ctx.author.send(file=discord.File(basic_paths.rjoin("groups.yml")))

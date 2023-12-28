@@ -32,11 +32,13 @@ ALLOWED_KEYS = [DATE, PLAYER_NUMBER, DESCRIPTION]
 # LOAD GROUPS
 if os.path.isfile(GROUPS_PATH):
     with open(GROUPS_PATH, "r") as yaml_file:
-        groups = yaml.safe_load(yaml_file)
+        groups = yaml.safe_load(yaml_file) or {}
 
 
 def list_groups(guild, show_full=False):
-    guild_groups = groups.get(guild, {})
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
     return_str = "**\- Gruppen Liste -**\n"
     return_strs = [return_str]
     for group, daten in guild_groups.items():
@@ -52,7 +54,9 @@ def list_groups(guild, show_full=False):
 
 
 def create_group(guild, group, date, player_number=4, description=""):
-    guild_groups = groups.get(guild, {})
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
     if guild_groups.get(group):
         return False, "Deine Gruppe existiert bereits."
     guild_groups[group] = {DATE: date, PLAYER_NUMBER: player_number, DESCRIPTION: description, PLAYER: []}
@@ -63,7 +67,9 @@ def create_group(guild, group, date, player_number=4, description=""):
 
 
 def destroy_group(guild, group):
-    guild_groups = groups.get(guild, {})
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
     if guild_groups.get(group):
         group_dict = guild_groups.pop(group)
         return 1, "Deine Gruppe wurde gelöscht.", group_dict[PLAYER]
@@ -71,7 +77,9 @@ def destroy_group(guild, group):
 
 
 def set_key(guild, group, key, value):
-    guild_groups = groups.get(guild, {})
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
     if guild_groups.get(group):
         if key in ALLOWED_KEYS:
             guild_groups[group][key] = value
@@ -83,7 +91,9 @@ def set_key(guild, group, key, value):
 
 
 def remove_player(guild, group, player):
-    guild_groups = groups.get(guild, {})
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
     if guild_groups.get(group):
         if player in guild_groups[group][PLAYER]:
             guild_groups[group][PLAYER].remove(player)
@@ -95,7 +105,9 @@ def remove_player(guild, group, player):
 
 
 def add_self(guild, group, player):
-    guild_groups = groups.get(guild, {})
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
     if guild_groups.get(group):
         if player not in guild_groups[group][PLAYER]:
             current_player_number = len(guild_groups[group][PLAYER])
@@ -114,7 +126,9 @@ def add_self(guild, group, player):
 
 
 def remove_self(guild, group, player):
-    guild_groups = groups.get(guild, {})
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
     if guild_groups.get(group):
         if player in guild_groups[group][PLAYER]:
             guild_groups[group][PLAYER].remove(player)

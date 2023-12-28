@@ -192,3 +192,4 @@ test/
 # Private Data Folders
 resources/groups/
 resources/token
+resources/groups.yml
