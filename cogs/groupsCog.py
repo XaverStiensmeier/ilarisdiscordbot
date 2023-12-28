@@ -14,6 +14,10 @@ def sanitize_group_name(group_prefix, author):
     return re.sub('[^0-9a-zA-Z\-_]+', '', group_name.replace(" ", "-")).lower()
 
 
+def sanitize_guild(guild):
+    return re.sub('[^0-9a-zA-Z\-_]+', '', guild.name.replace(" ", "-")).lower()
+
+
 class GroupCommands(commands.Cog):
     """
     Commands for handling groups
@@ -32,8 +36,8 @@ class GroupCommands(commands.Cog):
                       description: str = commands.parameter(default="Eine spannende Ilaris Runde!",
                                                             description="Description for your soon-to-be players")):
         group_name = sanitize_group_name(group, ctx.author)
-        status, result_str = organize_group.create_group(
-            group_name, time, maximum_players, description)
+        status, result_str = organize_group.create_group(sanitize_guild(ctx.guild),
+                                                         group_name, time, maximum_players, description)
         everyone = ctx.guild.default_role
 
         if status:
@@ -65,14 +69,14 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Lists all joinable groups.", aliases=['gliste'])
     async def glist(self, ctx,
                     full: bool = commands.parameter(default=False, description="'True' to show full groups, too")):
-        for result_str in organize_group.list_groups(full):
+        for result_str in organize_group.list_groups(sanitize_guild(ctx.guild), full):
             await ctx.reply(result_str)
 
     @commands.command(help="Destroys a group that you've created.",
                       aliases=['gentfernen'])
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = sanitize_group_name(group_prefix, ctx.author)
-        status, result_str, players = organize_group.destroy_group(group_name)
+        status, result_str, players = organize_group.destroy_group(sanitize_guild(ctx.guild), group_name)
         # if status, delete channels and role
         status = True
         if status:
@@ -107,7 +111,7 @@ class GroupCommands(commands.Cog):
                    value: str = commands.parameter(
                        description="Value to set the key to")):
         group = sanitize_group_name(group_prefix, ctx.author)
-        result_str = organize_group.set_key(group, key, value)
+        result_str = organize_group.set_key(sanitize_guild(ctx.guild), group, key, value)
         await ctx.reply(result_str)
 
     @commands.command(
@@ -117,7 +121,7 @@ class GroupCommands(commands.Cog):
                        value: str = commands.parameter(
                            description="New date")):
         group = sanitize_group_name(group_prefix, ctx.author)
-        result_str = organize_group.set_key(group, organize_group.DATE, value)
+        result_str = organize_group.set_key(sanitize_guild(ctx.guild), group, organize_group.DATE, value)
         await ctx.reply(result_str)
 
     @commands.command(
@@ -127,7 +131,7 @@ class GroupCommands(commands.Cog):
                               value: str = commands.parameter(
                                   description="New description")):
         group = sanitize_group_name(group_prefix, ctx.author)
-        result_str = organize_group.set_key(group, organize_group.DESCRIPTION, value)
+        result_str = organize_group.set_key(sanitize_guild(ctx.guild), group, organize_group.DESCRIPTION, value)
         await ctx.reply(result_str)
 
     @commands.command(
@@ -138,14 +142,14 @@ class GroupCommands(commands.Cog):
                                   value: str = commands.parameter(
                                       description="New number of players")):
         group = sanitize_group_name(group_prefix, ctx.author)
-        result_str = organize_group.set_key(group, organize_group.PLAYER_NUMBER, value)
+        result_str = organize_group.set_key(sanitize_guild(ctx.guild), group, organize_group.PLAYER_NUMBER, value)
         await ctx.reply(result_str)
 
     @commands.command(help="Removes a player from your group", aliases=['gkick'])
     async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
                       player: discord.Member = commands.parameter(description="Player to remove.")):
         group = sanitize_group_name(group_prefix, ctx.author)
-        status, result_str = organize_group.remove_player(group, player)
+        status, result_str = organize_group.remove_player(sanitize_guild(ctx.guild), group, player)
 
         if status:
             name, discriminator = player.split("#")
@@ -167,7 +171,7 @@ class GroupCommands(commands.Cog):
         if group.endswith(str(ctx.author).replace("#", "").lower()):
             status, result_str = False, "You can't join your own group."
         else:
-            status, result_str = organize_group.add_self(group, str(ctx.author))
+            status, result_str = organize_group.add_self(sanitize_guild(ctx.guild), group, str(ctx.author))
 
         if status:
             # get the role by group name
@@ -182,7 +186,7 @@ class GroupCommands(commands.Cog):
     @commands.command(help="Leave a group as a maximum_players", aliases=['gaustreten'])
     async def gleave(self, ctx, group: str = commands.parameter(description="Group you will leave.")):
         group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
-        status, result_str = organize_group.remove_self(group, str(ctx.author))
+        status, result_str = organize_group.remove_self(sanitize_guild(ctx.guild), group, str(ctx.author))
 
         if status:
             group_role = get(ctx.guild.roles, name=group)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Imports
+import csv
 import logging
 import logging.handlers
 import traceback
@@ -17,22 +18,32 @@ NO_UPDATE_COMMAND_LIST = ["glist"]
 with open(basic_paths.rjoin("token")) as token_file:
     token = token_file.readline()
 
-handler = logging.handlers.RotatingFileHandler(
-    filename='discord.log',
-    encoding='utf-8',
-    maxBytes=32 * 1024 * 1024,  # 32 MiB
-    backupCount=5,  # Rotate through 5 files
-)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    handlers=[handler]
-)
+handler = logging.handlers.RotatingFileHandler(filename='discord.log', encoding='utf-8', maxBytes=32 * 1024 * 1024,
+                                               # 32 MiB
+                                               backupCount=5,  # Rotate through 5 files
+                                               )
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S', handlers=[handler])
+
+
+def load_commands(filename):
+    loaded_commands = {}
+    with open(filename, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            loaded_commands[row['Command']] = row['Response']
+    return loaded_commands
+
+
+# Load commands from CSV
+commands_dict = load_commands('resources/text_commands.csv')
 # Credentials
 intents = discord.Intents().all()
 # Create bot
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+
+# Function to read CSV and create a dictionary
 
 
 # Startup Information
@@ -48,7 +59,12 @@ async def on_ready():
 async def on_command_error(ctx, error):
     logging.info(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send(f"Command not found. See `!help` for all commands.")
+        response = commands_dict.get(ctx.invoked_with)
+        if response:
+            await ctx.send(response)
+            return
+        else:
+            await ctx.send(f"Command not found. See `!help` for all commands.")
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         await ctx.send(f"Correct Usage: {ctx.prefix}{ctx.command.name} {ctx.command.signature}")
     elif isinstance(error, commands.BadArgument):
