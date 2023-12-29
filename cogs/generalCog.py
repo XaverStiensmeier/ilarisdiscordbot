@@ -10,8 +10,8 @@ from cogs.general import ilaris_database
 from cogs.general import parse_die
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(basic_paths.rjoin("manoeverkarten"))]
-NAMED_ROLLS = [("III°°", "2@5d20"), ("III°", "2@4d20"), ("I°°", "1@3d20"), ("I°", "1@2d20"), ("III", "2@3d20"),
-               ("I", "1d20")]
+NAMED_ROLLS = [("IIIoo", "2@5d20"), ("IIIo", "2@4d20"), ("Ioo", "1@3d20"), ("Io", "1@2d20"), ("ooIII", "4@5d20"),
+               ("oIII", "3@4d20"), ("ooI", "3@3d20"), ("oI", "2@2d20"), ("III", "2@3d20"), ("I", "1d20")]
 
 
 class GeneralCommands(commands.Cog):
@@ -25,6 +25,10 @@ class GeneralCommands(commands.Cog):
     @commands.command(help="Greets the Ilaris Bot.")
     async def helloilaris(self, ctx):
         await ctx.reply(f"Hey, <@{ctx.author.id}>!")
+
+    @commands.command(help="Gets link to KreaturenDB", aliases=["kreatur", "kreaturen", "creature"])
+    async def creatures(self, ctx, creature: str = commands.parameter(default=None, description="Name of creature")):
+        await ctx.reply(f"https://ilaris-online.de/app/kreaturen/{f'?suche={creature}' if creature else ''}")
 
     @commands.command(help="Posts an image of the given page if argument is numeric. Else the database entry.")
     async def ilaris(self, ctx, arg: str = commands.parameter(
@@ -51,7 +55,7 @@ class GeneralCommands(commands.Cog):
                            "2d6+3: Sum the result of 2 6-sided dice and 3.\n"
                            "2@3d20: Roll 3d20 and take the second highest i.e. (20,15,5) => 15.\n"
                            "Special rolls:\n"
-                           "I: 1d20, I°: 1@2d20, I°° 1@3d20\n"
+                           "I: 1d20, Io: 1@2d20, Ioo 1@3d20\n"
                            "III: 2@3d20, III': 2@4d20, III'' 2@5d20\n", aliases=['w'])
     async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse."),
                 show: str = commands.parameter(default=False, description="Shows roll results string if True.")):
@@ -67,7 +71,7 @@ class GeneralCommands(commands.Cog):
             total_result = f"{total_result} -- `{total_result_str}`"
         await ctx.reply(total_result)
 
-    @commands.command(help="Admin only: Gets debug information")
+    @commands.command(help="Admin only: Gets debug information", hidden=True)
     @commands.has_permissions(administrator=True)
     async def what(self, ctx):
         await ctx.author.send(file=discord.File(os.path.join(basic_paths.ROOT, "discord.log")))

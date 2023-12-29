@@ -96,7 +96,8 @@ class GroupCommands(commands.Cog):
         await ctx.reply(result_str)
 
     @commands.command(help="Purges a group.",
-                      aliases=['gbereinigen'])
+                      aliases=['gbereinigen'],
+                      hidden=True)
     @commands.has_permissions(administrator=True)
     async def gpurge(self, ctx, group_name: str = commands.parameter(description="Group (full name)")):
         status, result_str, players = organize_group.destroy_group(sanitize_guild(ctx.guild), group_name)
