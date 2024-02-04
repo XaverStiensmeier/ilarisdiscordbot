@@ -130,9 +130,9 @@ def remove_player(guild, group, player):
     if guild_groups.get(group):
         if player in guild_groups[group][PLAYER]:
             guild_groups[group][PLAYER].remove(player)
-            return True, f"Spieler {player} wurde entfernt."
+            return True, f"Spieler <@{player}> wurde entfernt."
         else:
-            return False, f"Spieler {player} ist nicht in Gruppe {group}."
+            return False, f"Spieler <@{player}> ist nicht in Gruppe {group}."
     else:
         return False, f"Gruppe {group} existiert nicht."
 

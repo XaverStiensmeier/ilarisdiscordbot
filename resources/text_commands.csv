@@ -9,6 +9,7 @@ Generelle Befehle:
     III: Gibt 2@3w20 zurück. IIIo: Mit Schicksalspunkt. IIIoo: Mit Schicksalspunkt und Eigenheit.
   what Nur für Admins: Ruft Debug-Informationen ab
 Gruppen Befehle:
+  gaddchannel Füge einen neuen Kanal zur Gruppe hinzu. Du kannst erzeugte Kanäle nicht mehr löschen.
   gcreate Nimmt Gruppenname Datum ""Maximale Spieleranzahl"" und Beschreibung entgegen. Erzeugt eine neue Gruppe mit dir als GM. 
   gdestroy Nimmt Gruppennamen (ohne deinen Nutzernamen) entgegen. Zerstört diese Gruppe, die du erstellt hast.
   gjoin Nimmt Gruppennamen entgegen. Betritt diese Gruppe.
