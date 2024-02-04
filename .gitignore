@@ -193,3 +193,6 @@ test/
 resources/groups/
 resources/token
 resources/groups.yml
+
+# 
+*.lock

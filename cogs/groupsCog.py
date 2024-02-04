@@ -7,8 +7,7 @@ from discord.ext import commands
 from discord.utils import get
 
 from cogs.group import organize_group
-from utility.sanitizer import sanitize_guild
-from utility.sanitizer import sanitize_group_name
+from utility.sanitizer import sanitize_guild, sanitize_group_name, sanitize_prefix
 
 
 class GroupCommands(commands.Cog):
@@ -23,17 +22,16 @@ class GroupCommands(commands.Cog):
                       aliases=['gneu'])
     async def gcreate(self, ctx, group: str = commands.parameter(description="Your group to create"),
                       time: str = commands.parameter(
-                          description="Time to play in GMT+1 (for example '25.02.23 14:00')"),
+                          description="Time to play in GMT+1 (for example '24.02.24 14:00')"),
                       maximum_players: int = commands.parameter(
                           default=4, description="Maximum number of players"),
                       description: str = commands.parameter(default="Eine spannende Ilaris Runde!",
                                                             description="Description for your soon-to-be players")):
         group_name = sanitize_group_name(group, ctx.author)
-        status, result_str = organize_group.create_group(sanitize_guild(ctx.guild),
-                                                         group_name, time, maximum_players, description)
+        sanitized_guild = sanitize_guild(ctx.guild)
         everyone = ctx.guild.default_role
 
-        if status:
+        if not organize_group.group_exists(sanitized_guild, group_name):
             # create role
             role = await ctx.guild.create_role(name=group_name)
             logging.debug(f"Created role {role}.")
@@ -45,19 +43,27 @@ class GroupCommands(commands.Cog):
                           role: discord.PermissionOverwrite(read_messages=True)}
             logging.debug(f"Permission for role {role} set.")
             # create category
-            category = await ctx.guild.create_category(name=group_name)
+            category = await ctx.guild.create_category(name=sanitize_prefix(group))
             logging.debug(f"Created category {category}")
+            result_str = organize_group.create_group(sanitized_guild,
+                                                     group_name, category.id, time, maximum_players, description)
             # create channels
-            text_channel = await ctx.guild.create_text_channel(name=group_name, overwrites=overwrites,
+            text_channel = await ctx.guild.create_text_channel(name="Text", overwrites=overwrites,
                                                                category=category)
+            organize_group.add_channel(sanitized_guild, group_name, text_channel.id)
             logging.debug(f"Created text channel {text_channel}")
-            voice_channel = await ctx.guild.create_voice_channel(name=group_name,
+
+            voice_channel = await ctx.guild.create_voice_channel(name="Voice",
                                                                  overwrites=overwrites,
                                                                  category=category)
-
-            await text_channel.send(f"Hey, <@{ctx.author.id}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt.")
+            organize_group.add_channel(sanitized_guild, group_name, voice_channel.id)
             logging.debug(f"Created voice channel {voice_channel}")
-        await ctx.reply(result_str)
+
+            logging.debug("Added group.")
+            await text_channel.send(f"Hey, <@{ctx.author.id}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt.")
+            await ctx.reply(result_str)
+        else:
+            await ctx.reply(f"You already have a group called {group_name}...")
 
     @commands.command(help="Lists all joinable groups.", aliases=['gliste'])
     async def glist(self, ctx,
@@ -69,7 +75,8 @@ class GroupCommands(commands.Cog):
                       aliases=['gentfernen'])
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = sanitize_group_name(group_prefix, ctx.author)
-        status, result_str, players = organize_group.destroy_group(sanitize_guild(ctx.guild), group_name)
+        sanitized_guild = sanitize_guild(ctx.guild)
+        status, result_str, players, channels = organize_group.destroy_group(sanitized_guild, group_name)
         # if status, delete channels and role
         status = True
         if status:
@@ -79,16 +86,19 @@ class GroupCommands(commands.Cog):
                 await role.delete()
                 logging.debug(f"Deleted role {role}.")
 
+            # remove channels
+            for channel_id in channels:
+                tmp_channel = ctx.guild.get_channel(channel_id)
+                if tmp_channel:
+                    await tmp_channel.delete()
+                    organize_group.remove_channel(sanitized_guild, group_name, tmp_channel.id)
+                    logging.debug(f"Deleted channel {tmp_channel.name}.")
+
             # remove category
             category = discord.utils.get(ctx.guild.categories, name=group_name)
             if category:
                 await category.delete()
                 logging.debug(f"Deleted category {category}.")
-            # remove channels
-            for channel in ctx.guild.channels:
-                if str(channel) == group_name:
-                    await channel.delete()
-                    logging.debug(f"Deleted channel {channel}.")
         for player in players:
             name, discriminator = player.split("#")
             user = discord.utils.get(ctx.guild.members, name=name, discriminator=discriminator)
@@ -223,3 +233,33 @@ class GroupCommands(commands.Cog):
             await text_channel.send(f"Verabschiedet <@{ctx.author.id}>.")
 
         await ctx.reply(result_str)
+
+    @commands.command(help="Added einen Channel zu einer Gruppe.",
+                      aliases=['gchannelhinzufügen'])
+    async def gaddchannel(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)"),
+                          channel_name: str = commands.parameter(description="Channel name to create"),
+                          is_voice: bool = commands.parameter(default=False,
+                              description="If True, a voice channel is created. Else a text channel.")):
+        group_name = sanitize_group_name(group_prefix, ctx.author)
+        sanitized_guild = sanitize_guild(ctx.guild)
+        category = discord.utils.get(ctx.guild.categories, name=group_name)
+
+        # Handle Roles
+        everyone = ctx.guild.default_role
+        role = discord.utils.get(ctx.guild.roles, name=group_name)
+        overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
+                      role: discord.PermissionOverwrite(read_messages=True)}
+
+        # Add Channel
+        if is_voice:
+            voice_channel = await ctx.guild.create_voice_channel(name=channel_name, overwrites=overwrites,
+                                                                 category=category)
+            organize_group.add_channel(sanitized_guild, group_name, voice_channel.id)
+            logging.debug(f"Created voice channel {voice_channel}")
+            await ctx.reply("Created voice channel!")
+        else:
+            text_channel = await ctx.guild.create_text_channel(name=channel_name, overwrites=overwrites,
+                                                               category=category)
+            organize_group.add_channel(sanitized_guild, group_name, text_channel.id)
+            logging.debug(f"Created text channel {text_channel}")
+            await ctx.reply("Created text channel!")

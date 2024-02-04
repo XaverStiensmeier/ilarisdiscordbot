@@ -3,21 +3,33 @@
 import signal
 import sys
 import os
+import logging
 
+from filelock import FileLock
 import yaml
 
-PLAYER_NUMBER = "spieleranzahl"
-DATE = "uhrzeit"
-DESCRIPTION = "beschreibung"
-PLAYER = "spieler"
+PLAYER_NUMBER = "player_number"
+DATE = "date"
+DESCRIPTION = "description"
+PLAYER = "player"
 GROUPS_PATH = os.path.join("resources", "groups.yml")
+CHANNELS = "channels"
+CATEGORY = "category"
 
 
-def save_groups_yaml(guild):
-    with open(GROUPS_PATH, "w+") as file:
-        yaml.safe_dump(groups, file)
+def save_yaml(original_function):
+    def wrapper(guild, *args, **kwargs):
+        result = original_function(guild, *args, **kwargs)
+        with open(GROUPS_PATH, "w+") as file:
+            logging.debug(f"Saving triggered by {guild}...")
+            with FileLock("groups.yml.lock"):
+                yaml.safe_dump(groups, file)
+        return result
+
+    return wrapper
 
 
+@save_yaml
 def sigterm_handler(_signo, _stack_frame):
     sys.exit(0)
 
@@ -35,7 +47,9 @@ if os.path.isfile(GROUPS_PATH):
         groups = yaml.safe_load(yaml_file) or {}
 
 
+@save_yaml
 def list_groups(guild, show_full=False):
+    print(groups)
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
@@ -53,29 +67,36 @@ def list_groups(guild, show_full=False):
     return return_strs
 
 
-def create_group(guild, group, date, player_number=4, description=""):
+@save_yaml
+def create_group(guild, group, category, date, player_number=4, description=""):
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
-    if guild_groups.get(group):
-        return False, "Deine Gruppe existiert bereits."
-    guild_groups[group] = {DATE: date, PLAYER_NUMBER: player_number, DESCRIPTION: description, PLAYER: []}
+    guild_groups[group] = {CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number, DESCRIPTION: description,
+                           PLAYER: [], CHANNELS: []}
     return_str = f"Neue Gruppe {group} angelegt.\n"
+    return_str += f"Zum Channel hinzufügen: `!gaddchannel {'_'.join(group.split('_')[:-1])} new_channel`.\n"
     return_str += f"Zum Gruppe entfernen: `!gdestroy {'_'.join(group.split('_')[:-1])}`\n"
     return_str += f"Zum Beitreten: `!gjoin {group}`\n\n"
-    return True, return_str
+    return return_str
 
 
+def group_exists(guild, group):
+    return groups.get(guild) and groups[guild].get(group)
+
+
+@save_yaml
 def destroy_group(guild, group):
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
     if guild_groups.get(group):
         group_dict = guild_groups.pop(group)
-        return 1, "Deine Gruppe wurde gelöscht.", group_dict[PLAYER]
-    return False, "Deine Gruppe existiert nicht.", []
+        return 1, "Die Gruppe wurde gelöscht.", group_dict[PLAYER], group_dict[CHANNELS]
+    return False, "Die Gruppe existiert nicht.", [], []
 
 
+@save_yaml
 def set_key(guild, group, key, value):
     if not groups.get(guild):
         groups[guild] = {}
@@ -90,6 +111,7 @@ def set_key(guild, group, key, value):
         return f"Gruppe {group} existiert nicht."
 
 
+@save_yaml
 def remove_player(guild, group, player):
     if not groups.get(guild):
         groups[guild] = {}
@@ -104,6 +126,7 @@ def remove_player(guild, group, player):
         return False, f"Gruppe {group} existiert nicht."
 
 
+@save_yaml
 def add_self(guild, group, player):
     if not groups.get(guild):
         groups[guild] = {}
@@ -125,6 +148,7 @@ def add_self(guild, group, player):
         return False, f"Gruppe {group} existiert nicht."
 
 
+@save_yaml
 def remove_self(guild, group, player):
     if not groups.get(guild):
         groups[guild] = {}
@@ -137,3 +161,30 @@ def remove_self(guild, group, player):
             return False, f"Du bist kein Spieler der Gruppe {group}."
     else:
         return False, f"Gruppe {group} existiert nicht."
+
+
+@save_yaml
+def add_channel(guild, group, channel):
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
+    if guild_groups.get(group):
+        guild_groups[group][CHANNELS].append(channel)
+
+
+@save_yaml
+def remove_channel(guild, group, channel):
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
+    if guild_groups.get(group):
+        guild_groups[group][CHANNELS].remove(channel)
+
+
+@save_yaml
+def channel_exists(guild, group, channel):
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
+
+    return guild_groups.get(group) and channel in guild_groups[group][CHANNELS]

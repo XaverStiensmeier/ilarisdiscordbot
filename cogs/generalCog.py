@@ -58,7 +58,7 @@ class GeneralCommands(commands.Cog):
                            "I: 1d20, Io: 1@2d20, Ioo 1@3d20\n"
                            "III: 2@3d20, III': 2@4d20, III'' 2@5d20\n", aliases=['w'])
     async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse."),
-                show: str = commands.parameter(default=False, description="Shows roll results string if True.")):
+                show: str = commands.parameter(default=True, description="Shows roll results string if True.")):
         roll = roll.replace(" ", "")
         new_roll = roll
         for key, value in NAMED_ROLLS:
