@@ -177,7 +177,7 @@ class GroupCommands(commands.Cog):
     async def gjoin(self, ctx, group: str = commands.parameter(description="Group you will join.")):
         group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
 
-        if False and organize_group.is_owner(sanitize_single(ctx.guild), group, ctx.author.id):
+        if organize_group.is_owner(sanitize_single(ctx.guild), group, ctx.author.id):
             status, result_str = False, "You can't join your own group."
         else:
             status, result_str = organize_group.add_self(sanitize_single(ctx.guild), group, ctx.author.id)
