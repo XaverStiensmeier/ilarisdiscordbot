@@ -43,7 +43,7 @@ class GroupCommands(commands.Cog):
                           role: discord.PermissionOverwrite(read_messages=True)}
             logging.debug(f"Permission for role {role} set.")
             # create category
-            category = await ctx.guild.create_category(name=sanitize_prefix(group))
+            category = await ctx.guild.create_category(name=group_name)
             logging.debug(f"Created category {category}")
             result_str = organize_group.create_group(sanitized_guild,
                                                      group_name, category.id, time, maximum_players, description)
@@ -76,7 +76,7 @@ class GroupCommands(commands.Cog):
     async def gdestroy(self, ctx, group_prefix: str = commands.parameter(description="Your group (short name)")):
         group_name = sanitize_group_name(group_prefix, ctx.author)
         sanitized_guild = sanitize_guild(ctx.guild)
-        status, result_str, players, channels = organize_group.destroy_group(sanitized_guild, group_name)
+        status, result_str, players, channels, category = organize_group.destroy_group(sanitized_guild, group_name)
         # if status, delete channels and role
         status = True
         if status:
@@ -95,10 +95,10 @@ class GroupCommands(commands.Cog):
                     logging.debug(f"Deleted channel {tmp_channel.name}.")
 
             # remove category
-            category = discord.utils.get(ctx.guild.categories, name=group_name)
-            if category:
-                await category.delete()
-                logging.debug(f"Deleted category {category}.")
+            tmp_category = ctx.guild.get_channel(category)
+            if tmp_category:
+                await tmp_category.delete()
+                logging.debug(f"Deleted category {tmp_category}.")
         for player in players:
             name, discriminator = player.split("#")
             user = discord.utils.get(ctx.guild.members, name=name, discriminator=discriminator)

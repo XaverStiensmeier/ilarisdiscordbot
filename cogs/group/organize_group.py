@@ -4,7 +4,7 @@ import signal
 import sys
 import os
 import logging
-
+from utility.sanitizer import sanitize_guild
 from filelock import FileLock
 import yaml
 
@@ -49,7 +49,6 @@ if os.path.isfile(GROUPS_PATH):
 
 @save_yaml
 def list_groups(guild, show_full=False):
-    print(groups)
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
@@ -92,8 +91,8 @@ def destroy_group(guild, group):
     guild_groups = groups[guild]
     if guild_groups.get(group):
         group_dict = guild_groups.pop(group)
-        return 1, "Die Gruppe wurde gelöscht.", group_dict[PLAYER], group_dict[CHANNELS]
-    return False, "Die Gruppe existiert nicht.", [], []
+        return 1, "Die Gruppe wurde gelöscht.", group_dict[PLAYER], group_dict[CHANNELS], group_dict[CATEGORY]
+    return False, "Die Gruppe existiert nicht.", [], [], []
 
 
 @save_yaml

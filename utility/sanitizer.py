@@ -12,3 +12,4 @@ def sanitize_guild(guild):
 
 def sanitize_prefix(prefix):
     return re.sub('[^0-9a-zA-Z\-_]+', '', prefix.replace(" ", "-")).lower()
+
