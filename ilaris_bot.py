@@ -7,12 +7,13 @@ import traceback
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import after_invoke
 
 import basic_paths
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
-from utility.sanitizer import sanitize_guild
+from utility.sanitizer import sanitize_single
 
 
 NO_UPDATE_COMMAND_LIST = ["glist"]
@@ -81,14 +82,13 @@ async def on_command_error(ctx, error):
 
 
 @bot.event
-async def on_command(ctx):
+async def on_command_completion(ctx):
     logging.info("'{}' used '{}' on '{}' in '{}'".format(ctx.author, ctx.message.content, ctx.guild.name, ctx.channel))
     if ctx.command.cog_name == "GroupCommands" and ctx.command.name not in NO_UPDATE_COMMAND_LIST:
-        organize_group.save_groups_yaml(ctx.guild)
         channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
         if channel:
             await channel.purge()
-            for result_str in organize_group.list_groups(sanitize_guild(ctx.guild)):
+            for result_str in organize_group.list_groups(sanitize_single(ctx.guild)):
                 await channel.send(result_str)
         else:
             logging.info("No group channel found.")

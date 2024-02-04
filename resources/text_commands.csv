@@ -5,8 +5,8 @@ Generelle Befehle:
   halloilaris Begrüßt den Ilaris Bot
   ilaris Nimmt eine Zahl oder einen Namen entgegen. Postet die entsprechende Seite im Regelwerk oder Regel.
   r Würfelt. Bspw. 2w6+3 wird zu 'Gib die Summe aus 2 geworfenen 6-seitigen Würfeln und 3 zurück'. Besonders:
-    I: Gibt 1w20 zurück. I°: Mit Schicksalspunkt. I°°: Mit Schicksalspunkt und Eigenheit.
-    III: Gibt 2@3w20 zurück. III°: Mit Schicksalspunkt. III°°: Mit Schicksalspunkt und Eigenheit.
+    I: Gibt 1w20 zurück. Io: Mit Schicksalspunkt. Ioo: Mit Schicksalspunkt und Eigenheit.
+    III: Gibt 2@3w20 zurück. IIIo: Mit Schicksalspunkt. IIIoo: Mit Schicksalspunkt und Eigenheit.
   what Nur für Admins: Ruft Debug-Informationen ab
 Gruppen Befehle:
   gcreate Nimmt Gruppenname Datum ""Maximale Spieleranzahl"" und Beschreibung entgegen. Erzeugt eine neue Gruppe mit dir als GM. 
@@ -24,7 +24,8 @@ Gib !help command ein, um weitere Informationen zu einem Befehl auf Englisch zu 
 Anmerkung: Argumente mit Leerzeichen müssen in Anführungszeichen angegeben werden: ""Das ist ein Argument""
 ```"
 ioc,Die nächste Ilaris Online Con ist am 24.02.24!
-drachentöter,Ein alternatives Kampfregelwerk für Ilaris. Schau mal hier: https://discord.gg/AF3WjqvMU9
+drachentöter,Ein überarbeitetes (Kampf-)Regelwerk für Ilaris. Schau mal hier: https://discord.gg/AF3WjqvMU9
 zusatzmaterial,https://ilaris-online.de/app/inhalte/
 abenteuer,https://ilaris-online.de/app/abenteuers/
 chroniken,https://de.wiki-aventurica.de/wiki/Ilaris:Die_Chroniken_von_Ilaris
+actualplay1,https://www.youtube.com/watch?v=hEPFIlI0AEg
