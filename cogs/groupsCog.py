@@ -160,17 +160,15 @@ class GroupCommands(commands.Cog):
     async def gremove(self, ctx, group_prefix: str = commands.parameter(description="Your goup (short name)."),
                       player: discord.Member = commands.parameter(description="Player to remove.")):
         group = sanitize_group_name(group_prefix, ctx.author)
-        status, result_str = organize_group.remove_player(sanitize_single(ctx.guild), group, player)
+        status, result_str = organize_group.remove_player(sanitize_single(ctx.guild), group, player.id)
 
         if status:
-            name, discriminator = player.split("#")
-            user = discord.utils.get(ctx.guild.members, name=name, discriminator=discriminator)
             group_role = get(ctx.guild.roles, name=group)
             # removing group role when existing
-            if group_role in user.roles:
-                await user.remove_roles(group_role)
-                logging.debug(f"Removed role {group_role} from user {user}.")
-            text_channel = discord.utils.get(ctx.guild.text_channels, name=group)
+            if group_role in player.roles:
+                await player.remove_roles(group_role)
+                logging.debug(f"Removed role {group_role} from user {player}.")
+            text_channel = ctx.guild.get_channel(organize_group.get_main_channel(sanitize_single(ctx.guild), group))
             await text_channel.send(f"Verabschiedet <@{player.id}>.")
 
         await ctx.reply(result_str)
