@@ -13,7 +13,7 @@ import basic_paths
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
-from utility.sanitizer import sanitize_guild
+from utility.sanitizer import sanitize_single
 
 
 NO_UPDATE_COMMAND_LIST = ["glist"]
@@ -88,7 +88,7 @@ async def on_command_completion(ctx):
         channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
         if channel:
             await channel.purge()
-            for result_str in organize_group.list_groups(sanitize_guild(ctx.guild)):
+            for result_str in organize_group.list_groups(sanitize_single(ctx.guild)):
                 await channel.send(result_str)
         else:
             logging.info("No group channel found.")

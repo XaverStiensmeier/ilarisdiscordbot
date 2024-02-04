@@ -4,7 +4,7 @@ import signal
 import sys
 import os
 import logging
-from utility.sanitizer import sanitize_guild
+
 from filelock import FileLock
 import yaml
 
@@ -15,6 +15,7 @@ PLAYER = "player"
 GROUPS_PATH = os.path.join("resources", "groups.yml")
 CHANNELS = "channels"
 CATEGORY = "category"
+OWNER = "owner"
 
 
 def save_yaml(original_function):
@@ -67,12 +68,14 @@ def list_groups(guild, show_full=False):
 
 
 @save_yaml
-def create_group(guild, group, category, date, player_number=4, description=""):
+def create_group(guild, group, owner, category, date, player_number=4, description=""):
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
-    guild_groups[group] = {CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number, DESCRIPTION: description,
+    guild_groups[group] = {OWNER: owner, CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number,
+                           DESCRIPTION: description,
                            PLAYER: [], CHANNELS: []}
+
     return_str = f"Neue Gruppe {group} angelegt.\n"
     return_str += f"Zum Channel hinzufügen: `!gaddchannel {'_'.join(group.split('_')[:-1])} new_channel`.\n"
     return_str += f"Zum Gruppe entfernen: `!gdestroy {'_'.join(group.split('_')[:-1])}`\n"
@@ -93,6 +96,15 @@ def destroy_group(guild, group):
         group_dict = guild_groups.pop(group)
         return 1, "Die Gruppe wurde gelöscht.", group_dict[PLAYER], group_dict[CHANNELS], group_dict[CATEGORY]
     return False, "Die Gruppe existiert nicht.", [], [], []
+
+
+def get_main_channel(guild, group):
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
+    if guild_groups.get(group):
+        return guild_groups[group][CHANNELS][0]
+    return None
 
 
 @save_yaml
@@ -180,10 +192,16 @@ def remove_channel(guild, group, channel):
         guild_groups[group][CHANNELS].remove(channel)
 
 
-@save_yaml
 def channel_exists(guild, group, channel):
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
 
     return guild_groups.get(group) and channel in guild_groups[group][CHANNELS]
+
+
+def is_owner(guild, group, author_id):
+    if not groups.get(guild):
+        groups[guild] = {}
+    guild_groups = groups[guild]
+    return guild_groups.get(group) and guild_groups[group][OWNER] == author_id
