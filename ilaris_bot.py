@@ -85,7 +85,7 @@ async def on_command_error(ctx, error):
 async def on_command_completion(ctx):
     logging.info("'{}' used '{}' on '{}' in '{}'".format(ctx.author, ctx.message.content, ctx.guild.name, ctx.channel))
     if ctx.command.cog_name == "GroupCommands" and ctx.command.name not in NO_UPDATE_COMMAND_LIST:
-        channel = discord.utils.get(ctx.guild.text_channels, name="open-groups-list")
+        channel = discord.utils.get(ctx.guild.text_channels, name="spielrunden")
         if channel:
             await channel.purge()
             for result_str in organize_group.list_groups(sanitize_single(ctx.guild)):
