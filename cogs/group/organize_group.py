@@ -9,13 +9,25 @@ from filelock import FileLock
 import yaml
 
 PLAYER_NUMBER = "player_number"
+PLAYER_NUMBER_PRINT = "Spielerzahl"
 DATE = "date"
+DATE_PRINT = "Datum"
 DESCRIPTION = "description"
+DESCRIPTION_PRINT = "Beschreibung"
 PLAYER = "player"
+PLAYER_PRINT = "Beschreibung"
 GROUPS_PATH = os.path.join("resources", "groups.yml")
 CHANNELS = "channels"
 CATEGORY = "category"
 OWNER = "owner"
+
+HOW_TO_JOIN = """
+Wo du beitreten möchtest, kopiere den Teil mit `!gjoin` und sendet diese Zeile dann in #bot-spam. 
+Der Bot sorgt automatisch für die Zuordnung :wink:
+
+Bei Schwierigkeiten, einfach fragen. Wir helfen, wo wir können!
+_ _
+"""
 
 
 def save_yaml(original_function):
@@ -53,16 +65,18 @@ def list_groups(guild, show_full=False):
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
-    return_str = "**\- Gruppen Liste -**\n"
+    return_str = HOW_TO_JOIN
+    return_str += "**\- Gruppen Liste -**\n"
     return_strs = [return_str]
     for group, daten in guild_groups.items():
         return_str = ""
         if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
-            return_str += f"**--- {group} ---**\n"
-            return_str += f"{DESCRIPTION}: {daten[DESCRIPTION]}\n"
-            return_str += f"{DATE}: {daten[DATE]}\n"
-            return_str += f"{PLAYER_NUMBER}: ({len(daten[PLAYER])}/{daten[PLAYER_NUMBER]})\n"
-            return_str += f"Zum Beitreten: `!gjoin {group}`\n\n"
+            return_str += f"**{group.replace('-', ' ').title()}**\n"
+            return_str += f"{daten[DESCRIPTION]}\n"
+            return_str += f"**{DATE_PRINT}**: {daten[DATE]}\n"
+            return_str += f"**{PLAYER_NUMBER_PRINT}**: {len(daten[PLAYER])}/{daten[PLAYER_NUMBER]}\n"
+            return_str += f"**Zum Beitreten**: `!gjoin {group}`\n\n"
+            return_str += "_ _"
             return_strs.append(return_str)
     return return_strs
 
