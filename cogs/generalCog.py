@@ -47,10 +47,12 @@ class GeneralCommands(commands.Cog):
         name, three_best = differ.closest_match(arg, cards)
         if name:
             file_path = basic_paths.rjoin("manoeverkarten")
-            if os.path.isfile(f"{name}.jpg"):
-                file_path = os.path.join(f"{name}.jpg")
-            elif os.path.isfile(f"{name}.png"):
-                file_path = os.path.join(f"{name}.png")
+            file_path_jpg = os.path.join(file_path, f"{name}.jpg")
+            file_path_png = os.path.join(file_path, f"{name}.png")
+            if os.path.isfile(file_path_jpg):
+                file_path = file_path_jpg
+            elif os.path.isfile(file_path_png):
+                file_path = file_path_png
             else:
                 await ctx.reply("Rule card has wrong file ending... Abort.")
             await ctx.reply(file=discord.File(file_path))
