@@ -35,7 +35,8 @@ class GeneralCommands(commands.Cog):
         description="Number or database entry (for example 4 or 'Duplicatus')")):
         if arg.isnumeric() and int(arg):
             if 219 >= int(arg) > 0:
-                await ctx.reply(file=discord.File(basic_paths.rjoin(f"ilaris/ilaris-{arg.zfill(3)}.png")))
+                await ctx.reply(
+                    file=discord.File(basic_paths.rjoin(os.path.join("ilaris", f"ilaris-{arg.zfill(3)}.png"))))
             else:
                 await ctx.reply("Ilaris only has 219 pages.")
         else:
@@ -45,7 +46,14 @@ class GeneralCommands(commands.Cog):
     async def card(self, ctx, arg: str = commands.parameter(description="Name of rule card")):
         name, three_best = differ.closest_match(arg, cards)
         if name:
-            await ctx.reply(file=discord.File(basic_paths.rjoin(f"manoeverkarten/{name}.png")))
+            file_path = basic_paths.rjoin("manoeverkarten")
+            if os.path.isfile(f"{name}.jpg"):
+                file_path = os.path.join(f"{name}.jpg")
+            elif os.path.isfile(f"{name}.png"):
+                file_path = os.path.join(f"{name}.png")
+            else:
+                await ctx.reply("Rule card has wrong file ending... Abort.")
+            await ctx.reply(file=discord.File(file_path))
             if three_best:
                 await ctx.reply(f"Die drei besten Matches sind: {three_best}")
         else:

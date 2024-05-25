@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import os
+
 import yaml
 
 import basic_paths
 import cogs.general.differ
 
-with open(basic_paths.rjoin("datenbank/discord.yml")) as file:
+with open(basic_paths.rjoin(os.path.join("datenbank", "discord.yml"))) as file:
     flat_database = yaml.safe_load(file)
 
 
