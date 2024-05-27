@@ -70,10 +70,8 @@ class GeneralCommands(commands.Cog):
     async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse."),
                 identifier: str = commands.parameter(default="", description="Identifier.")):
         roll = roll.replace(" ", "")
-        new_roll = roll
         for key, value in NAMED_ROLLS:
-            new_roll = new_roll.replace(key, value)
-        roll = new_roll
+            roll = roll.replace(key, value)
         total_result_str, total_result = parse_die.parse_roll(roll)
         if identifier:
             total_result = f"""```md
