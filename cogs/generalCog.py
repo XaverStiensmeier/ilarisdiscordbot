@@ -35,7 +35,8 @@ class GeneralCommands(commands.Cog):
         description="Number or database entry (for example 4 or 'Duplicatus')")):
         if arg.isnumeric() and int(arg):
             if 219 >= int(arg) > 0:
-                await ctx.reply(file=discord.File(basic_paths.rjoin(f"ilaris/ilaris-{arg.zfill(3)}.png")))
+                await ctx.reply(
+                    file=discord.File(basic_paths.rjoin(os.path.join("ilaris", f"ilaris-{arg.zfill(3)}.png"))))
             else:
                 await ctx.reply("Ilaris only has 219 pages.")
         else:
@@ -45,7 +46,16 @@ class GeneralCommands(commands.Cog):
     async def card(self, ctx, arg: str = commands.parameter(description="Name of rule card")):
         name, three_best = differ.closest_match(arg, cards)
         if name:
-            await ctx.reply(file=discord.File(basic_paths.rjoin(f"manoeverkarten/{name}.png")))
+            file_path = basic_paths.rjoin("manoeverkarten")
+            file_path_jpg = os.path.join(file_path, f"{name}.jpg")
+            file_path_png = os.path.join(file_path, f"{name}.png")
+            if os.path.isfile(file_path_jpg):
+                file_path = file_path_jpg
+            elif os.path.isfile(file_path_png):
+                file_path = file_path_png
+            else:
+                await ctx.reply("Rule card has wrong file ending... Abort.")
+            await ctx.reply(file=discord.File(file_path))
             if three_best:
                 await ctx.reply(f"Die drei besten Matches sind: {three_best}")
         else:
@@ -58,18 +68,18 @@ class GeneralCommands(commands.Cog):
                            "I: 1d20, Io: 1@2d20, Ioo 1@3d20\n"
                            "III: 2@3d20, III': 2@4d20, III'' 2@5d20\n", aliases=['w'])
     async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse."),
-                show: str = commands.parameter(default=True, description="Shows roll results string if True.")):
+                identifier: str = commands.parameter(default="", description="Identifier.")):
         roll = roll.replace(" ", "")
-        new_roll = roll
         for key, value in NAMED_ROLLS:
-            new_roll = new_roll.replace(key, value)
-        if roll != new_roll and show:
-            await ctx.reply(f"Rolling {new_roll}")
-        roll = new_roll
+            roll = roll.replace(key, value)
         total_result_str, total_result = parse_die.parse_roll(roll)
-        if show:
-            total_result = f"{total_result} -- `{total_result_str}`"
-        await ctx.reply(total_result)
+        total_result = f"""```md
+# {ctx.author.nick or ctx.author.global_name} --- {identifier} {total_result}
+Details: {total_result_str}```"""
+        await ctx.message.delete()
+        response = await ctx.send(total_result)
+        # await response.delete(delay=300)
+        await response.add_reaction("❌")
 
     @commands.command(help="Admin only: Gets debug information", hidden=True)
     @commands.has_permissions(administrator=True)
