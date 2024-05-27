@@ -94,4 +94,13 @@ async def on_command_completion(ctx):
             logging.info("No group channel found.")
 
 
+@bot.event
+async def on_reaction_add(reaction, user):
+    # Check if the reaction is on the bot's message and the emoji is the delete emoji
+    if (reaction.message.author == bot.user and reaction.emoji == "❌" and user.guild_permissions.administrator
+            and user != bot.user):
+        # Delete the message
+        await reaction.message.delete()
+
+
 bot.run(token)  # , log_handler=handler

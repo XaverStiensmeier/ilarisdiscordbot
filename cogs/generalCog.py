@@ -73,15 +73,13 @@ class GeneralCommands(commands.Cog):
         for key, value in NAMED_ROLLS:
             roll = roll.replace(key, value)
         total_result_str, total_result = parse_die.parse_roll(roll)
-        if identifier:
-            total_result = f"""```md
-# {identifier} {total_result}
+        total_result = f"""```md
+# {ctx.author.nick or ctx.author.global_name} --- {identifier} {total_result}
 Details: {total_result_str}```"""
-        else:
-            total_result = f"""```md
-# {total_result}
-Details: {total_result_str}```"""
-        await ctx.reply(total_result)
+        await ctx.message.delete()
+        response = await ctx.send(total_result)
+        # await response.delete(delay=300)
+        await response.add_reaction("❌")
 
     @commands.command(help="Admin only: Gets debug information", hidden=True)
     @commands.has_permissions(administrator=True)
