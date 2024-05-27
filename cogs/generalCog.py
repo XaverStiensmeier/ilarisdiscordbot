@@ -68,17 +68,21 @@ class GeneralCommands(commands.Cog):
                            "I: 1d20, Io: 1@2d20, Ioo 1@3d20\n"
                            "III: 2@3d20, III': 2@4d20, III'' 2@5d20\n", aliases=['w'])
     async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse."),
-                show: str = commands.parameter(default=True, description="Shows roll results string if True.")):
+                identifier: str = commands.parameter(default="", description="Identifier.")):
         roll = roll.replace(" ", "")
         new_roll = roll
         for key, value in NAMED_ROLLS:
             new_roll = new_roll.replace(key, value)
-        if roll != new_roll and show:
-            await ctx.reply(f"Rolling {new_roll}")
         roll = new_roll
         total_result_str, total_result = parse_die.parse_roll(roll)
-        if show:
-            total_result = f"{total_result} -- `{total_result_str}`"
+        if identifier:
+            total_result = f"""```md
+# {identifier} {total_result}
+Details: {total_result_str}```"""
+        else:
+            total_result = f"""```md
+# {total_result}
+Details: {total_result_str}```"""
         await ctx.reply(total_result)
 
     @commands.command(help="Admin only: Gets debug information", hidden=True)
