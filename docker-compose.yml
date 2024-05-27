@@ -1,0 +1,7 @@
+services:
+  ilarisbot:
+    image: ilarisbot:v0.1
+    volumes:
+      - ./data:/data
+    build: .
+    restart: always
