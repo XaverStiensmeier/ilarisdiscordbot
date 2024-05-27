@@ -4,12 +4,12 @@ import os
 import discord
 from discord.ext import commands
 
-import basic_paths
+import basic_paths as bp
 from cogs.general import differ
 from cogs.general import ilaris_database
 from cogs.general import parse_die
 
-cards = [os.path.splitext(filename)[0] for filename in os.listdir(basic_paths.rjoin("manoeverkarten"))]
+cards = [os.path.splitext(filename)[0] for filename in os.listdir(bp.rjoin("manoeverkarten"))]
 NAMED_ROLLS = [("IIIoo", "2@5d20"), ("IIIo", "2@4d20"), ("Ioo", "1@3d20"), ("Io", "1@2d20"), ("ooIII", "4@5d20"),
                ("oIII", "3@4d20"), ("ooI", "3@3d20"), ("oI", "2@2d20"), ("III", "2@3d20"), ("I", "1d20")]
 
@@ -36,7 +36,7 @@ class GeneralCommands(commands.Cog):
         if arg.isnumeric() and int(arg):
             if 219 >= int(arg) > 0:
                 await ctx.reply(
-                    file=discord.File(basic_paths.rjoin(os.path.join("ilaris", f"ilaris-{arg.zfill(3)}.png"))))
+                    file=discord.File(bp.rjoin(os.path.join("ilaris", f"ilaris-{arg.zfill(3)}.png"))))
             else:
                 await ctx.reply("Ilaris only has 219 pages.")
         else:
@@ -46,7 +46,7 @@ class GeneralCommands(commands.Cog):
     async def card(self, ctx, arg: str = commands.parameter(description="Name of rule card")):
         name, three_best = differ.closest_match(arg, cards)
         if name:
-            file_path = basic_paths.rjoin("manoeverkarten")
+            file_path = bp.rjoin("manoeverkarten")
             file_path_jpg = os.path.join(file_path, f"{name}.jpg")
             file_path_png = os.path.join(file_path, f"{name}.png")
             if os.path.isfile(file_path_jpg):
@@ -84,5 +84,5 @@ Details: {total_result_str}```"""
     @commands.command(help="Admin only: Gets debug information", hidden=True)
     @commands.has_permissions(administrator=True)
     async def what(self, ctx):
-        await ctx.author.send(file=discord.File(os.path.join(basic_paths.ROOT, "discord.log")))
-        await ctx.author.send(file=discord.File(basic_paths.rjoin("groups.yml")))
+        await ctx.author.send(file=discord.File(bp.djoin("discord.log")))
+        await ctx.author.send(file=discord.File(bp.djoin("groups.yml")))

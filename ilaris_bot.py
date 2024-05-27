@@ -9,7 +9,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import after_invoke
 
-import basic_paths
+import basic_paths as bp
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
@@ -18,13 +18,15 @@ from utility.sanitizer import sanitize_single
 
 NO_UPDATE_COMMAND_LIST = ["glist"]
 
-with open(basic_paths.rjoin("token")) as token_file:
+with open(bp.djoin("token")) as token_file:
     token = token_file.readline()
 
-handler = logging.handlers.RotatingFileHandler(filename='discord.log', encoding='utf-8', maxBytes=32 * 1024 * 1024,
-                                               # 32 MiB
-                                               backupCount=5,  # Rotate through 5 files
-                                               )
+handler = logging.handlers.RotatingFileHandler(
+    filename=bp.djoin('discord.log'), 
+    encoding='utf-8', 
+    maxBytes=32 * 1024 * 1024,  # 32 MiB
+    backupCount=5,  # Rotate through 5 files
+)
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S', handlers=[handler])
 
@@ -39,12 +41,11 @@ def load_commands(filename):
 
 
 # Load commands from CSV
-commands_dict = load_commands('resources/text_commands.csv')
+commands_dict = load_commands(bp.rjoin('text_commands.csv'))
 # Credentials
 intents = discord.Intents().all()
 # Create bot
 bot = commands.Bot(command_prefix='!', intents=intents)
-
 
 # Function to read CSV and create a dictionary
 
