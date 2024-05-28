@@ -30,7 +30,7 @@ class GeneralCommands(commands.Cog):
     @commands.command(help=msg["creatures_help"], aliases=["kreatur", "kreaturen", "creature"])
     async def creatures(self, ctx, creature: str = commands.parameter(default=None, description=msg["creatures_desc"])):
         params = f"suche={creature}" if creature else ""
-        await ctx.reply(msg["creatures_url"].format(get=params)
+        await ctx.reply(msg["creatures_url"].format(params=params))
 
     @commands.command(help="Posts an image of the given page if argument is numeric. Else the database entry.")
     async def ilaris(self, ctx, arg: str = commands.parameter(
