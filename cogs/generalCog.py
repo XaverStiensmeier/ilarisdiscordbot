@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 
 import basic_paths as bp
+from messages import msg
 from cogs.general import differ
 from cogs.general import ilaris_database
 from cogs.general import parse_die
@@ -22,13 +23,14 @@ class GeneralCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(help="Greets the Ilaris Bot.")
+    @commands.command(help=msg["helloilaris_help"])
     async def helloilaris(self, ctx):
-        await ctx.reply(f"Hey, <@{ctx.author.id}>!")
+        await ctx.reply(msg["helloilaris_reply"].format(author=ctx.author.id))
 
-    @commands.command(help="Gets link to KreaturenDB", aliases=["kreatur", "kreaturen", "creature"])
-    async def creatures(self, ctx, creature: str = commands.parameter(default=None, description="Name of creature")):
-        await ctx.reply(f"https://ilaris-online.de/app/kreaturen/{f'?suche={creature}' if creature else ''}")
+    @commands.command(help=msg["creatures_help"], aliases=["kreatur", "kreaturen", "creature"])
+    async def creatures(self, ctx, creature: str = commands.parameter(default=None, description=msg["creatures_desc"])):
+        params = f"suche={creature}" if creature else ""
+        await ctx.reply(msg["creatures_url"].format(get=params)
 
     @commands.command(help="Posts an image of the given page if argument is numeric. Else the database entry.")
     async def ilaris(self, ctx, arg: str = commands.parameter(

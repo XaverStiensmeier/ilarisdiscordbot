@@ -1,0 +1,8 @@
+# commands:
+helloilaris_help: "Greets the Ilaris Bot."
+helloilaris_reply: "Hey, <@{author}>!"
+creatures_help: "Gets link to KreaturenDB"
+creatures_desc: "Name of creature"
+creatures_url: "https://ilaris-online.de/app/kreaturen/{params}"
+# messages: {}
+# errors: {}
