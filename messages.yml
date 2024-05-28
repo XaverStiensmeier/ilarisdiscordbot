@@ -5,4 +5,8 @@ creatures_help: "Gets link to KreaturenDB"
 creatures_desc: "Name of creature"
 creatures_url: "https://ilaris-online.de/app/kreaturen/{params}"
 # messages: {}
-# errors: {}
+# errors:
+cmd_not_found: "Command not found. See `!help` for all commands."
+bad_args: "Correct Usage: {pre}{cmd} {sig}"
+unexpected_error: "Unexpected Error."
+cmd_failed: "Command execution failed: {info}"
