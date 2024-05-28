@@ -4,9 +4,30 @@ helloilaris_reply: "Hey, <@{author}>!"
 creatures_help: "Gets link to KreaturenDB"
 creatures_desc: "Name of creature"
 creatures_url: "https://ilaris-online.de/app/kreaturen/{params}"
+ilaris_help: "Posts an image of the given page if argument is numeric. Else the database entry."
+ilaris_desc: "Number or database entry (for example 4 or 'Duplicatus')"
+card_help: "Posts an image of a specified rule card."
+card_desc: "Name of rule card"
+card_best_matches: "Die drei besten Matches sind: {best}"
+r_help: |
+  Rolls dice.
+  2d6+3: Sum the result of 2 6-sided dice and 3.
+  2@3d20: Roll 3d20 and take the second highest i.e. (20,15,5) => 15.
+  Special rolls:
+  I: 1d20, Io: 1@2d20, Ioo 1@3d20
+  III: 2@3d20, III': 2@4d20, III'' 2@5d20
+r_desc: "Dice string to parse."
+r_result: |
+  ```md
+  # {author} --- {identifier} {result}
+  Details: {total_result_str}
+  ```
 # messages: {}
 # errors:
 cmd_not_found: "Command not found. See `!help` for all commands."
 bad_args: "Correct Usage: {pre}{cmd} {sig}"
 unexpected_error: "Unexpected Error."
 cmd_failed: "Command execution failed: {info}"
+page_limit: "Ilaris only has 219 pages."
+card_wrong_type: "Rule card has wrong file ending... Abort."
+card_not_found: "No such rule card..."

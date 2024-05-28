@@ -11,8 +11,11 @@ from cogs.general import ilaris_database
 from cogs.general import parse_die
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(bp.rjoin("manoeverkarten"))]
-NAMED_ROLLS = [("IIIoo", "2@5d20"), ("IIIo", "2@4d20"), ("Ioo", "1@3d20"), ("Io", "1@2d20"), ("ooIII", "4@5d20"),
-               ("oIII", "3@4d20"), ("ooI", "3@3d20"), ("oI", "2@2d20"), ("III", "2@3d20"), ("I", "1d20")]
+NAMED_ROLLS = [
+    ("IIIoo", "2@5d20"), ("IIIo", "2@4d20"), ("Ioo", "1@3d20"), 
+    ("Io", "1@2d20"), ("ooIII", "4@5d20"), ("oIII", "3@4d20"), 
+    ("ooI", "3@3d20"), ("oI", "2@2d20"), ("III", "2@3d20"), ("I", "1d20")
+]
 
 
 class GeneralCommands(commands.Cog):
@@ -32,20 +35,19 @@ class GeneralCommands(commands.Cog):
         params = f"suche={creature}" if creature else ""
         await ctx.reply(msg["creatures_url"].format(params=params))
 
-    @commands.command(help="Posts an image of the given page if argument is numeric. Else the database entry.")
-    async def ilaris(self, ctx, arg: str = commands.parameter(
-        description="Number or database entry (for example 4 or 'Duplicatus')")):
+    @commands.command(help=msg["ilaris_help"])
+    async def ilaris(self, ctx, arg: str = commands.parameter(description=msg["ilaris_desc"])):
         if arg.isnumeric() and int(arg):
             if 219 >= int(arg) > 0:
                 await ctx.reply(
                     file=discord.File(bp.rjoin(os.path.join("ilaris", f"ilaris-{arg.zfill(3)}.png"))))
             else:
-                await ctx.reply("Ilaris only has 219 pages.")
+                await ctx.reply(msg["page_limit"])
         else:
             await ctx.reply(ilaris_database.get_database_entry(name=arg))
 
-    @commands.command(help="Posts an image of a specified rule card.", aliases=['karte'])
-    async def card(self, ctx, arg: str = commands.parameter(description="Name of rule card")):
+    @commands.command(help=msg["card_help"], aliases=['karte'])
+    async def card(self, ctx, arg: str = commands.parameter(description=msg["card_desc"])):
         name, three_best = differ.closest_match(arg, cards)
         if name:
             file_path = bp.rjoin("manoeverkarten")
@@ -56,35 +58,34 @@ class GeneralCommands(commands.Cog):
             elif os.path.isfile(file_path_png):
                 file_path = file_path_png
             else:
-                await ctx.reply("Rule card has wrong file ending... Abort.")
+                await ctx.reply(msg["card_wrong_type"])
             await ctx.reply(file=discord.File(file_path))
             if three_best:
-                await ctx.reply(f"Die drei besten Matches sind: {three_best}")
+                await ctx.reply(msg["card_best_matches"].format(best=three_best))
         else:
-            await ctx.reply("No such rule card...")
+            await ctx.reply(msg["card_not_found"])
 
-    @commands.command(help="Rolls dice.\n"
-                           "2d6+3: Sum the result of 2 6-sided dice and 3.\n"
-                           "2@3d20: Roll 3d20 and take the second highest i.e. (20,15,5) => 15.\n"
-                           "Special rolls:\n"
-                           "I: 1d20, Io: 1@2d20, Ioo 1@3d20\n"
-                           "III: 2@3d20, III': 2@4d20, III'' 2@5d20\n", aliases=['w'])
-    async def r(self, ctx, roll: str = commands.parameter(default="III", description="Dice string to parse."),
+    @commands.command(help=msg["r_help"], aliases=['w'])
+    async def r(self, ctx, roll: str = commands.parameter(default="III", description=msg["r_desc"]),
                 identifier: str = commands.parameter(default="", description="Identifier.")):
         roll = roll.replace(" ", "")
         for key, value in NAMED_ROLLS:
             roll = roll.replace(key, value)
         total_result_str, total_result = parse_die.parse_roll(roll)
-        total_result = f"""```md
-# {ctx.author.nick or ctx.author.global_name} --- {identifier} {total_result}
-Details: {total_result_str}```"""
+        total_result = msg["r_result"].format(
+            author=ctx.author.nick or ctx.author.global_name,
+            identifier=identifier,
+            result=total_result,
+            details=total_result_str
+        )
         await ctx.message.delete()
         response = await ctx.send(total_result)
         # await response.delete(delay=300)
         await response.add_reaction("❌")
 
-    @commands.command(help="Admin only: Gets debug information", hidden=True)
-    @commands.has_permissions(administrator=True)
-    async def what(self, ctx):
-        await ctx.author.send(file=discord.File(bp.djoin("discord.log")))
-        await ctx.author.send(file=discord.File(bp.djoin("groups.yml")))
+    # TODO: allow sending files only for specific user ids
+    # @commands.command(help="Admin only: Gets debug information", hidden=True)
+    # @commands.has_permissions(administrator=True)
+    # async def what(self, ctx):
+    #     await ctx.author.send(file=discord.File(bp.djoin("discord.log")))
+    #     await ctx.author.send(file=discord.File(bp.djoin("groups.yml")))
