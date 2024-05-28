@@ -1,14 +1,18 @@
 # commands:
 helloilaris_help: "Greets the Ilaris Bot."
 helloilaris_reply: "Hey, <@{author}>!"
+
 creatures_help: "Gets link to KreaturenDB"
 creatures_desc: "Name of creature"
 creatures_url: "https://ilaris-online.de/app/kreaturen/{params}"
+
 ilaris_help: "Posts an image of the given page if argument is numeric. Else the database entry."
 ilaris_desc: "Number or database entry (for example 4 or 'Duplicatus')"
+
 card_help: "Posts an image of a specified rule card."
 card_desc: "Name of rule card"
 card_best_matches: "Die drei besten Matches sind: {best}"
+
 r_help: |
   Rolls dice.
   2d6+3: Sum the result of 2 6-sided dice and 3.
@@ -22,7 +26,58 @@ r_result: |
   # {author} --- {identifier} {result}
   Details: {total_result_str}
   ```
-# messages: {}
+
+group_prefix: "Your group (without username)"
+
+gcreate_help: "Creates a new group with yourself as the GM."
+gcreate_desc_default: "Eine spannende Ilaris Runde!"
+gcreate_desc: "Description for your soon-to-be players"
+gcreate_group: "Your group to create"
+gcreate_time: "Time to play in GMT+1 (for example '24.02.24 14:00')"
+gcreate_maxplayers: "Maximum number of players"
+gcreate_channel_created: "Hey, <@{author}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt."
+gcreate_group_exists: "You already have a group called {name}..."
+
+glist_help: "Lists all joinable groups."
+glist_desc: "'True' to show full groups, too"))
+
+gdestroy_help: "Destroys a group that you've created."
+group_deleted_info: "{author} hat die Gruppe {name} gelöscht. Du bist daher kein Mitglied mehr."
+
+gpurge_help: "Purges a group."
+gpurge_group: "Group (full name)"
+
+gset_help: "Sets a group key."
+gset_key: "Key to set. For example: {date},{description} or {players}"
+gset_value: "Value to set the key to"
+
+gsetdate_help: "Sets date."
+gsetdate_value: "New date"
+
+gsetnumberofplayers_help: "Sets maximum_players number."
+gsetnumberofplayers_value: "New number of players"
+
+gsetdescription_help: "Sets description."
+gsetdescription_group: "Your group (without username)"
+gsetdescription_value: "New description"
+
+gremove_help: "Removes a player from your group"
+gremove_player: "Player to remove."
+gremove_info: "Verabschiedet <@{player}>."
+
+gjoin_help: "Join a group as a player"
+gjoin_group: "Group you will join."
+gjoin_info: "Begrüßt <@{player}>!"
+
+gleave_help: "Leave a group as a maximum_players"
+gleave_group: "Group you will leave."
+
+gaddchannel_help: "Added einen Channel zu einer Gruppe."
+gaddchannel_channel: "Channel name to create"
+gaddchannel_voice: "If True, a voice channel is created. Else a text channel."
+gaddchannel_created_voice: "Created voice channel!"
+gaddchannel_created_text: "Created text channel!"
+
 # errors:
 cmd_not_found: "Command not found. See `!help` for all commands."
 bad_args: "Correct Usage: {pre}{cmd} {sig}"
@@ -31,3 +86,4 @@ cmd_failed: "Command execution failed: {info}"
 page_limit: "Ilaris only has 219 pages."
 card_wrong_type: "Rule card has wrong file ending... Abort."
 card_not_found: "No such rule card..."
+join_own_group: "You can't join your own group."
