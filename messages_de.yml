@@ -4,7 +4,7 @@ helloilaris_reply: "Hey, <@{author}>!"
 
 creatures_help: "Link zur KreaturenDB"
 creatures_desc: "Name der Kreatur"
-creatures_url: "https://ilaris-online.de/app/kreaturen/{params}"
+
 
 ilaris_help: "Postet ein Bild der angegebenen Seite, wenn das Argument numerisch ist. Sonst den Datenbankeintrag."
 ilaris_desc: "Nummer oder Datenbankeintrag (z.B. 4 oder 'Duplicatus')"
