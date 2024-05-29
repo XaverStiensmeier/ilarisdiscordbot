@@ -11,7 +11,7 @@ ilaris_desc: "Number or database entry (for example 4 or 'Duplicatus')"
 
 card_help: "Posts an image of a specified rule card."
 card_desc: "Name of rule card"
-card_best_matches: "Die drei besten Matches sind: {best}"
+card_best_matches: "The three best matches are: {best}"
 
 r_help: |
   Rolls dice.
@@ -30,19 +30,19 @@ r_result: |
 group_prefix: "Your group (without username)"
 
 gcreate_help: "Creates a new group with yourself as the GM."
-gcreate_desc_default: "Eine spannende Ilaris Runde!"
+gcreate_desc_default: "An exciting Ilaris session!"
 gcreate_desc: "Description for your soon-to-be players"
 gcreate_group: "Your group to create"
 gcreate_time: "Time to play in GMT+1 (for example '24.02.24 14:00')"
 gcreate_maxplayers: "Maximum number of players"
-gcreate_channel_created: "Hey, <@{author}>! Ich habe dir und deiner Gruppe diesen Kanal erstellt."
+gcreate_channel_created: "Hey, <@{author}>! I created this channel for you and your group."
 gcreate_group_exists: "You already have a group called {name}..."
 
 glist_help: "Lists all joinable groups."
 glist_desc: "'True' to show full groups, too"
 
 gdestroy_help: "Destroys a group that you've created."
-group_deleted_info: "{author} hat die Gruppe {name} gelöscht. Du bist daher kein Mitglied mehr."
+group_deleted_info: "{author} deleted the group {name}. You are not a member anymore."
 
 gpurge_help: "Purges a group."
 gpurge_group: "Group (full name)"
@@ -63,11 +63,11 @@ gsetdescription_value: "New description"
 
 gremove_help: "Removes a player from your group"
 gremove_player: "Player to remove."
-gremove_info: "Verabschiedet <@{player}>."
+gremove_info: "Bye bye <@{player}>."
 
 gjoin_help: "Join a group as a player"
 gjoin_group: "Group you will join."
-gjoin_info: "Begrüßt <@{player}>!"
+gjoin_info: "Greetings <@{player}>!"
 
 gleave_help: "Leave a group as a player"
 gleave_group: "Group you will leave."
