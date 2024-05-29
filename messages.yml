@@ -39,7 +39,7 @@ gcreate_channel_created: "Hey, <@{author}>! Ich habe dir und deiner Gruppe diese
 gcreate_group_exists: "You already have a group called {name}..."
 
 glist_help: "Lists all joinable groups."
-glist_desc: "'True' to show full groups, too"))
+glist_desc: "'True' to show full groups, too"
 
 gdestroy_help: "Destroys a group that you've created."
 group_deleted_info: "{author} hat die Gruppe {name} gelöscht. Du bist daher kein Mitglied mehr."
