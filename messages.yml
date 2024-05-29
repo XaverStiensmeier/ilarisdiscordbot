@@ -72,7 +72,7 @@ gjoin_info: "Greetings <@{player}>!"
 gleave_help: "Leave a group as a player"
 gleave_group: "Group you will leave."
 
-gaddchannel_help: "Added einen Channel zu einer Gruppe."
+gaddchannel_help: "Add a Channel for your group."
 gaddchannel_channel: "Channel name to create"
 gaddchannel_voice: "If True, a voice channel is created. Else a text channel."
 gaddchannel_created_voice: "Created voice channel!"
