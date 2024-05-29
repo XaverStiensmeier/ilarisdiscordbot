@@ -9,8 +9,8 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import after_invoke
 
-import basic_paths as bp
 from messages import msg
+import config as cfg
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
@@ -19,11 +19,11 @@ from utility.sanitizer import sanitize_single
 
 NO_UPDATE_COMMAND_LIST = ["glist"]
 
-with open(bp.djoin("token")) as token_file:
+with open(cfg.DATA/"token") as token_file:
     token = token_file.readline()
 
 handler = logging.handlers.RotatingFileHandler(
-    filename=bp.djoin('discord.log'), 
+    filename=cfg.DATA/'discord.log', 
     encoding='utf-8', 
     maxBytes=32 * 1024 * 1024,  # 32 MiB
     backupCount=5,  # Rotate through 5 files
@@ -47,7 +47,7 @@ def load_commands(filename):
 
 
 # Load commands from CSV
-commands_dict = load_commands(bp.rjoin('text_commands.csv'))
+commands_dict = load_commands(cfg.RESOURCES/'text_commands.csv')
 # Credentials
 intents = discord.Intents().all()
 # Create bot
