@@ -7,6 +7,7 @@ import logging
 
 from filelock import FileLock
 import yaml
+import config as cfg
 
 PLAYER_NUMBER = "player_number"
 PLAYER_NUMBER_PRINT = "Spielerzahl"
@@ -16,7 +17,7 @@ DESCRIPTION = "description"
 DESCRIPTION_PRINT = "Beschreibung"
 PLAYER = "player"
 PLAYER_PRINT = "Beschreibung"
-GROUPS_PATH = os.path.join("data", "groups.yml")
+GROUPS_PATH = cfg.DATA/"groups.yml"
 CHANNELS = "channels"
 CATEGORY = "category"
 OWNER = "owner"
@@ -38,7 +39,6 @@ def save_yaml(original_function):
             with FileLock("groups.yml.lock"):
                 yaml.safe_dump(groups, file)
         return result
-
     return wrapper
 
 

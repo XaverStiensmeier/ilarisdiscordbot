@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import os
-
 import yaml
-
-import basic_paths
+import config as cfg
+from messages import msg
 import cogs.general.differ
 
-with open(basic_paths.rjoin(os.path.join("datenbank", "discord.yml"))) as file:
+
+with open(cfg.RESOURCES/"datenbank"/"discord.yml") as file:
     flat_database = yaml.safe_load(file)
 
 
@@ -18,9 +18,9 @@ def get_database_entry(name):
     if result_name:
         result = flat_database[result_name]
         if three_best:
-            result_str += f"Die drei besten Matches sind: {three_best}\n\n"
+            result_str += msg["card_best_matches"].format(best=three_best) + "\n\n"
     else:
-        return f"{name} nicht gefunden..."
+        return msg["not_found"].format(name=name)
 
     result_str += f"**--- {result_name} ---**\n"
     # Prepare print
