@@ -116,11 +116,7 @@ class GroupCommands(commands.Cog):
         )
     ):
         group_name = sanitize_group_name(group_prefix, ctx.author)
-        print(group_name)
-        print(ctx.author)
-        print(ctx.author.id)
-        print(ctx.author.name)
-        print(ctx.author.global_name)
+        # TODO: use author.id or author.name, ctx.author can fail #61
         await self.delete_group(ctx, group_name)
 
     @commands.command(
