@@ -69,7 +69,7 @@ gjoin_help: "Join a group as a player"
 gjoin_group: "Group you will join."
 gjoin_info: "Begrüßt <@{player}>!"
 
-gleave_help: "Leave a group as a maximum_players"
+gleave_help: "Leave a group as a player"
 gleave_group: "Group you will leave."
 
 gaddchannel_help: "Added einen Channel zu einer Gruppe."
