@@ -73,7 +73,7 @@ class GeneralCommands(commands.Cog):
             roll = roll.replace(key, value)
         total_result_str, total_result = parse_die.parse_roll(roll)
         total_result = msg["r_result"].format(
-            author=ctx.author.nick or ctx.author.global_name,
+            author=ctx.author.display_name,
             identifier=identifier,
             result=total_result,
             details=total_result_str

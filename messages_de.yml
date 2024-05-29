@@ -24,7 +24,7 @@ r_desc: "Zeichenkette zum Parsen der Würfel."
 r_result: |
   ```md
   # {author} --- {identifier} {result}
-  Details: {total_result_str}
+  Details: {details}
   ```
 
 group_prefix: "Deine Gruppe (ohne Benutzername)"
