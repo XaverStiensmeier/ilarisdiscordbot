@@ -10,6 +10,7 @@ from discord.ext import commands
 from discord.ext.commands import after_invoke
 
 import basic_paths as bp
+from messages import msg
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
@@ -27,8 +28,13 @@ handler = logging.handlers.RotatingFileHandler(
     maxBytes=32 * 1024 * 1024,  # 32 MiB
     backupCount=5,  # Rotate through 5 files
 )
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S', handlers=[handler])
+
+logging.basicConfig(
+    level=logging.DEBUG, 
+    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S', 
+    handlers=[handler]
+)
 
 
 def load_commands(filename):
@@ -68,24 +74,28 @@ async def on_command_error(ctx, error):
             await ctx.send(response)
             return
         else:
-            await ctx.send(f"Command not found. See `!help` for all commands.")
-    elif isinstance(error, commands.errors.MissingRequiredArgument):
-        await ctx.send(f"Correct Usage: {ctx.prefix}{ctx.command.name} {ctx.command.signature}")
-    elif isinstance(error, commands.BadArgument):
-        await ctx.send(f"Correct Usage: {ctx.prefix}{ctx.command.name} {ctx.command.signature}")
+            await ctx.send(msg["cmd_not_found"])
+    elif isinstance(error, commands.errors.MissingRequiredArgument) or \
+        isinstance(error, commands.errors.BadArgument):
+        await ctx.send(msg["bad_args"].format(
+            pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature
+        ))
     elif isinstance(error, Exception):
         if ctx.command:
             info = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
         else:
-            info = "Unexpected Error."
-        await ctx.send(f"Command Execution failed: {info}")
+            info = msg["unexpected_error"]
+        await ctx.send(msg["cmd_failed"].format(info=info))
     raise error
 
 
 @bot.event
 async def on_command_completion(ctx):
-    logging.info("'{}' used '{}' on '{}' in '{}'".format(ctx.author, ctx.message.content, ctx.guild.name, ctx.channel))
-    if ctx.command.cog_name == "GroupCommands" and ctx.command.name not in NO_UPDATE_COMMAND_LIST:
+    logging.info("'{}' used '{}' on '{}' in '{}'".format(
+        ctx.author, ctx.message.content, ctx.guild.name, ctx.channel
+    ))
+    if ctx.command.cog_name == "GroupCommands" and \
+        ctx.command.name not in NO_UPDATE_COMMAND_LIST:
         channel = discord.utils.get(ctx.guild.text_channels, name="spielrunden")
         if channel:
             await channel.purge()

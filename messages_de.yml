@@ -1,0 +1,89 @@
+# Befehle:
+helloilaris_help: "Grüßt den Ilaris Bot."
+helloilaris_reply: "Hey, <@{author}>!"
+
+creatures_help: "Link zur KreaturenDB"
+creatures_desc: "Name der Kreatur"
+
+
+ilaris_help: "Postet ein Bild der angegebenen Seite, wenn das Argument numerisch ist. Sonst den Datenbankeintrag."
+ilaris_desc: "Nummer oder Datenbankeintrag (z.B. 4 oder 'Duplicatus')"
+
+card_help: "Postet ein Bild einer bestimmten Regelkarte."
+card_desc: "Name der Regelkarte"
+card_best_matches: "Die drei besten Übereinstimmungen sind: {best}"
+
+r_help: |
+  Würfelt mit Würfeln.
+  2d6+3: Addiert das Ergebnis von 2 6-seitigen Würfeln und 3.
+  2@3d20: Würfelt 3d20 und nimmt das zweithöchste Ergebnis, z.B. (20,15,5) => 15.
+  Spezielle Würfe:
+  I: 1d20, Io: 1@2d20, Ioo 1@3d20
+  III: 2@3d20, III': 2@4d20, III'' 2@5d20
+r_desc: "Zeichenkette zum Parsen der Würfel."
+r_result: |
+  ```md
+  # {author} --- {identifier} {result}
+  Details: {details}
+  ```
+
+group_prefix: "Deine Gruppe (ohne Benutzername)"
+
+gcreate_help: "Erstellt eine neue Gruppe mit dir als Spielleiter."
+gcreate_desc_default: "Eine spannende Ilaris Runde!"
+gcreate_desc: "Beschreibung für deine baldigen Spieler"
+gcreate_group: "Deine zu erstellende Gruppe"
+gcreate_time: "Spielzeit in GMT+1 (zum Beispiel '24.02.24 14:00')"
+gcreate_maxplayers: "Maximale Anzahl von Spielern"
+gcreate_channel_created: "Hey, <@{author}>! Ich habe diesen Kanal für dich und deine Gruppe erstellt."
+gcreate_group_exists: "Du hast bereits eine Gruppe namens {name}..."
+
+glist_help: "Listet alle beitretbaren Gruppen auf."
+glist_desc: "'True', um auch volle Gruppen anzuzeigen"
+
+gdestroy_help: "Löscht eine von dir erstellte Gruppe."
+group_deleted_info: "{author} hat die Gruppe {name} gelöscht. Du bist kein Mitglied mehr."
+
+gpurge_help: "Löscht eine Gruppe vollständig."
+gpurge_group: "Gruppe (voller Name)"
+
+gset_help: "Setzt einen Gruppenschlüssel."
+gset_key: "Zu setzender Schlüssel. Zum Beispiel: {date},{description} oder {players}"
+gset_value: "Wert, auf den der Schlüssel gesetzt werden soll"
+
+gsetdate_help: "Setzt das Datum."
+gsetdate_value: "Neues Datum"
+
+gsetnumberofplayers_help: "Setzt die maximale Anzahl von Spielern."
+gsetnumberofplayers_value: "Neue Anzahl von Spielern"
+
+gsetdescription_help: "Setzt die Beschreibung."
+gsetdescription_group: "Deine Gruppe (ohne Benutzername)"
+gsetdescription_value: "Neue Beschreibung"
+
+gremove_help: "Entfernt einen Spieler aus deiner Gruppe"
+gremove_player: "Zu entfernender Spieler."
+gremove_info: "Verabschiedet <@{player}>."
+
+gjoin_help: "Tritt einer Gruppe als Spieler bei"
+gjoin_group: "Gruppe, der du beitreten möchtest."
+gjoin_info: "Begrüßt <@{player}>!"
+
+gleave_help: "Verlässt eine Gruppe als Spieler"
+gleave_group: "Gruppe, die du verlassen möchtest."
+
+gaddchannel_help: "Fügt einen Kanal zu einer Gruppe hinzu."
+gaddchannel_channel: "Name des zu erstellenden Kanals"
+gaddchannel_voice: "Wenn True, wird ein Sprachkanal erstellt. Andernfalls ein Textkanal."
+gaddchannel_created_voice: "Sprachkanal erstellt!"
+gaddchannel_created_text: "Textkanal erstellt!"
+
+# Fehlermeldungen:
+cmd_not_found: "Befehl nicht gefunden. Siehe `!help` für alle Befehle."
+bad_args: "Korrekte Verwendung: {pre}{cmd} {sig}"
+unexpected_error: "Unerwarteter Fehler."
+cmd_failed: "Befehlsausführung fehlgeschlagen: {info}"
+page_limit: "Ilaris hat nur 219 Seiten."
+card_wrong_type: "Die Regelkarte hat eine falsche Dateiendung... Abbruch."
+card_not_found: "Keine solche Regelkarte..."
+join_own_group: "Du kannst deiner eigenen Gruppe nicht beitreten."
