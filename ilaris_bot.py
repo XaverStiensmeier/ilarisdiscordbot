@@ -78,7 +78,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.errors.MissingRequiredArgument) or \
         isinstance(error, commands.errors.BadArgument):
         await ctx.send(msg["bad_args"].format(
-            pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature"
+            pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature
         ))
     elif isinstance(error, Exception):
         if ctx.command:
