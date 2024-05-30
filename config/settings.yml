@@ -1,0 +1,4 @@
+# set to 'de' for German or add your own messages_<LANGUAGE>.yml file
+language: de
+# TODO: this should be moved to bot data and be changeble by the user at runtime
+groups_channel: spielrunden

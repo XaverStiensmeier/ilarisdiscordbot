@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Imports
-import csv
 import logging
 import logging.handlers
 import traceback
@@ -9,7 +8,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import after_invoke
 
-from messages import msg
+from config import messages as msg
 import config as cfg
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
@@ -37,17 +36,8 @@ logging.basicConfig(
 )
 
 
-def load_commands(filename):
-    loaded_commands = {}
-    with open(filename, newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            loaded_commands[row['Command']] = row['Response']
-    return loaded_commands
 
 
-# Load commands from CSV
-commands_dict = load_commands(cfg.RESOURCES/'text_commands.csv')
 # Credentials
 intents = discord.Intents().all()
 # Create bot
@@ -69,7 +59,7 @@ async def on_ready():
 async def on_command_error(ctx, error):
     logging.info(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
-        response = commands_dict.get(ctx.invoked_with)
+        response = cfg.commands.get(ctx.invoked_with, {}).get("reply")
         if response:
             await ctx.send(response)
             return
@@ -94,9 +84,9 @@ async def on_command_completion(ctx):
     logging.info("'{}' used '{}' on '{}' in '{}'".format(
         ctx.author, ctx.message.content, ctx.guild.name, ctx.channel
     ))
-    if ctx.command.cog_name == "GroupCommands" and \
-        ctx.command.name not in NO_UPDATE_COMMAND_LIST:
-        channel = discord.utils.get(ctx.guild.text_channels, name="spielrunden")
+    if (ctx.command.cog_name == "GroupCommands" 
+        and ctx.command.name not in NO_UPDATE_COMMAND_LIST):
+        channel = discord.utils.get(ctx.guild.text_channels, name=cfg.settings.get("groups_channel"))
         if channel:
             await channel.purge()
             for result_str in organize_group.list_groups(sanitize_single(ctx.guild)):

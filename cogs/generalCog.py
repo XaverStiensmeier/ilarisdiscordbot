@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 import config as cfg
-from messages import msg
+from config import messages as msg
 from cogs.general import differ
 from cogs.general import ilaris_database
 from cogs.general import parse_die

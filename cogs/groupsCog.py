@@ -5,7 +5,7 @@ import re
 import discord
 from discord.ext import commands
 from discord.utils import get
-from messages import msg
+from config import messages as msg
 
 from cogs.group import organize_group
 from utility.sanitizer import sanitize_single, sanitize_group_name
