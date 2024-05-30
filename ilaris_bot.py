@@ -9,7 +9,7 @@ from discord.ext import commands
 from discord.ext.commands import after_invoke
 
 from config import messages as msg
-import config as cfg
+from config.constants import DATA
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
@@ -18,11 +18,11 @@ from utility.sanitizer import sanitize_single
 
 NO_UPDATE_COMMAND_LIST = ["glist"]
 
-with open(cfg.DATA/"token") as token_file:
+with open(DATA/"token") as token_file:
     token = token_file.readline()
 
 handler = logging.handlers.RotatingFileHandler(
-    filename=cfg.DATA/'discord.log', 
+    filename=DATA/'discord.log', 
     encoding='utf-8', 
     maxBytes=32 * 1024 * 1024,  # 32 MiB
     backupCount=5,  # Rotate through 5 files

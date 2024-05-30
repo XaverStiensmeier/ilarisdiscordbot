@@ -4,13 +4,13 @@ import os
 import discord
 from discord.ext import commands
 
-import config as cfg
+from config.constants import RESOURCES
 from config import messages as msg
 from cogs.general import differ
 from cogs.general import ilaris_database
 from cogs.general import parse_die
 
-cards = [os.path.splitext(filename)[0] for filename in os.listdir(cfg.RESOURCES/"manoeverkarten")]
+cards = [os.path.splitext(filename)[0] for filename in os.listdir(RESOURCES/"manoeverkarten")]
 NAMED_ROLLS = [
     ("IIIoo", "2@5d20"), ("IIIo", "2@4d20"), ("Ioo", "1@3d20"), 
     ("Io", "1@2d20"), ("ooIII", "4@5d20"), ("oIII", "3@4d20"), 
@@ -40,7 +40,7 @@ class GeneralCommands(commands.Cog):
         if arg.isnumeric() and int(arg):
             if 219 >= int(arg) > 0:
                 await ctx.reply(
-                    file=discord.File(cfg.RESOURCES/"ilaris"/f"ilaris-{arg.zfill(3)}.png"))
+                    file=discord.File(RESOURCES/"ilaris"/f"ilaris-{arg.zfill(3)}.png"))
             else:
                 await ctx.reply(msg["page_limit"])
         else:
