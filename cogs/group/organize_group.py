@@ -7,7 +7,7 @@ import logging
 
 from filelock import FileLock
 import yaml
-from config import constants as con
+from config import DATA
 
 # TODO: move to config.constants or config.messages
 PLAYER_NUMBER = "player_number"
@@ -18,7 +18,7 @@ DESCRIPTION = "description"
 DESCRIPTION_PRINT = "Beschreibung"
 PLAYER = "player"
 PLAYER_PRINT = "Beschreibung"
-GROUPS_PATH = con.DATA/"groups.yml"
+GROUPS_PATH = DATA/"groups.yml"
 CHANNELS = "channels"
 CATEGORY = "category"
 OWNER = "owner"

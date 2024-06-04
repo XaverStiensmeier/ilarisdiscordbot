@@ -1,25 +1,43 @@
 #!/usr/bin/env python3
 # Imports
+from ast import parse
 import logging
 import logging.handlers
 import traceback
+
+import yaml
+from pathlib import Path
 
 import discord
 from discord.ext import commands
 from discord.ext.commands import after_invoke
 
-from config import messages as msg
-from config.constants import DATA
+import argparse
+
+import config
+from config import DATA, ROOT
+
+CONFIG = ROOT / "config"
+
+NO_UPDATE_COMMAND_LIST = ["glist"]
+
+
+parser = argparse.ArgumentParser(description="Run the Ilaris Discord Bot")
+parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+parser.add_argument("--settings", type=str, help="Path to a settings file", default=CONFIG/"settings.yml")
+args = vars(parser.parse_args())
+
+config.load(config, args)
+
+with open(DATA/"token") as token_file:
+    token = token_file.readline()
+
+
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
 from utility.sanitizer import sanitize_single
 
-
-NO_UPDATE_COMMAND_LIST = ["glist"]
-
-with open(DATA/"token") as token_file:
-    token = token_file.readline()
 
 handler = logging.handlers.RotatingFileHandler(
     filename=DATA/'discord.log', 

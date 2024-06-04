@@ -3,6 +3,8 @@ import discord.ext.commands as commands
 import pytest
 import pytest_asyncio
 import discord.ext.test as dpytest
+import config
+config.load(config, {})
 
 # import commands we want to test
 from cogs.generalCog import GeneralCommands

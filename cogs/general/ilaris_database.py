@@ -2,12 +2,12 @@
 
 import os
 import yaml
-from config import constants as con
 from config import messages as msg
+from config import RESOURCES
 import cogs.general.differ
 
 
-with open(con.RESOURCES/"datenbank"/"discord.yml") as file:
+with open(RESOURCES/"datenbank"/"discord.yml") as file:
     flat_database = yaml.safe_load(file)
 
 

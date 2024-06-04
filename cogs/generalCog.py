@@ -4,7 +4,7 @@ import os
 import discord
 from discord.ext import commands
 
-from config.constants import RESOURCES
+from config import RESOURCES
 from config import messages as msg
 from cogs.general import differ
 from cogs.general import ilaris_database
