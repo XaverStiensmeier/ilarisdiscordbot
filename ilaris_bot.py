@@ -7,7 +7,8 @@ from discord.ext import commands
 from discord.ext.commands import after_invoke
 
 import config
-from config import DATA, ROOT
+from config import DATA
+from config import messages as msg
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
@@ -15,7 +16,6 @@ from utility.sanitizer import sanitize_single
 
 # TODO: not sure where this belongs:
 NO_UPDATE_COMMAND_LIST = ["glist"]
-
 
 
 handler = logging.handlers.RotatingFileHandler(
