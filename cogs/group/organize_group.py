@@ -84,13 +84,10 @@ def list_groups(guild, show_full=False):
 
 @save_yaml
 def create_group(guild, group, owner, category, date, player_number=4, description=""):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    guild_groups[group] = {OWNER: owner, CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number,
-                           DESCRIPTION: description,
-                           PLAYER: [], CHANNELS: []}
-
+    groups.setdefault(guild, {})
+    groups[guild][group] = {
+        OWNER: owner, CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number,
+        DESCRIPTION: description, PLAYER: [], CHANNELS: []}
     return_str = f"Neue Gruppe {group} angelegt.\n"
     return_str += f"Zum Channel hinzufügen: `!gaddchannel {'_'.join(group.split('_')[:-1])} new_channel`.\n"
     return_str += f"Zum Gruppe entfernen: `!gdestroy {'_'.join(group.split('_')[:-1])}`\n"

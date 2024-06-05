@@ -8,7 +8,7 @@ from discord.utils import get
 from config import messages as msg
 
 from cogs.group import organize_group
-from utility.sanitizer import sanitize_single, sanitize_group_name
+from utility.sanitizer import sanitize
 
 
 class GroupCommands(commands.Cog):
@@ -19,10 +19,8 @@ class GroupCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(help=msg["gcreate_help"],
-                      aliases=['gneu'])
-    async def gcreate(
-        self, ctx, 
+    @commands.command(help=msg["gcreate_help"], aliases=['gneu'])
+    async def gcreate(self, ctx, 
         group: str = commands.parameter(description=msg["gcreate_group"]),
         time: str = commands.parameter(description=msg["gcreate_time"]),
         maximum_players: int = commands.parameter(
@@ -34,8 +32,8 @@ class GroupCommands(commands.Cog):
             description=msg["gcreate_desc"]
         )
     ):
-        group_name = sanitize_group_name(group, ctx.author)
-        sanitized_guild = sanitize_single(ctx.guild)
+        group_name = sanitize(group)
+        sanitized_guild = sanitize(ctx.guild.name)
         everyone = ctx.guild.default_role
 
         if not organize_group.group_exists(sanitized_guild, group_name):
@@ -75,11 +73,11 @@ class GroupCommands(commands.Cog):
     @commands.command(help=msg["glist_help"], aliases=['gliste'])
     async def glist(self, ctx,
                     full: bool = commands.parameter(default=False, description=msg["glist_desc"])):
-        for result_str in organize_group.list_groups(sanitize_single(ctx.guild), full):
+        for result_str in organize_group.list_groups(sanitize(ctx.guild.name), full):
             await ctx.reply(result_str)
 
     async def delete_group(self, ctx, group_name):
-        sanitized_guild = sanitize_single(ctx.guild)
+        sanitized_guild = sanitize(ctx.guild.name)
         status, result_str, players, channels, category = organize_group.destroy_group(sanitized_guild, group_name)
         # if status, delete channels and role
         if status:
@@ -107,16 +105,14 @@ class GroupCommands(commands.Cog):
             await member.send(msg["group_deleted_info"].format(author=ctx.author, name=group_name))
         await ctx.reply(result_str)
 
-    @commands.command(help=msg["gdestroy_help"],
-                      aliases=['gentfernen'])
+    @commands.command(help=msg["gdestroy_help"], aliases=['gentfernen'])
     async def gdestroy(
         self, ctx, 
         group_prefix: str = commands.parameter(
             description=msg["group_prefix"]
         )
     ):
-        group_name = sanitize_group_name(group_prefix, ctx.author)
-        # TODO: use author.id or author.name, ctx.author can fail #61
+        group_name = sanitize(group_prefix)
         await self.delete_group(ctx, group_name)
 
     @commands.command(
@@ -146,8 +142,8 @@ class GroupCommands(commands.Cog):
         )),
         value: str = commands.parameter(
             description=msg["gset_value"])):
-        group = sanitize_group_name(group_prefix, ctx.author)
-        result_str = organize_group.set_key(sanitize_single(ctx.guild), group, key, value)
+        group = sanitize(group_prefix)
+        result_str = organize_group.set_key(sanitize(ctx.guild.name), group, key, value)
         await ctx.reply(result_str)
 
     @commands.command(
@@ -158,8 +154,8 @@ class GroupCommands(commands.Cog):
         value: str = commands.parameter(
             description=msg["gsetdate_value"])
     ):
-        group = sanitize_group_name(group_prefix, ctx.author)
-        result_str = organize_group.set_key(sanitize_single(ctx.guild), group, organize_group.DATE, value)
+        group = sanitize(group_prefix)
+        result_str = organize_group.set_key(sanitize(ctx.guild.name), group, organize_group.DATE, value)
         await ctx.reply(result_str)
 
     @commands.command(
@@ -171,8 +167,8 @@ class GroupCommands(commands.Cog):
         value: str = commands.parameter(
             description=msg["gsetdescription_value"])
         ):
-        group = sanitize_group_name(group_prefix, ctx.author)
-        result_str = organize_group.set_key(sanitize_single(ctx.guild), group, organize_group.DESCRIPTION, value)
+        group = sanitize(group_prefix)
+        result_str = organize_group.set_key(sanitize(ctx.guild.name), group, organize_group.DESCRIPTION, value)
         await ctx.reply(result_str)
 
     @commands.command(
@@ -183,8 +179,8 @@ class GroupCommands(commands.Cog):
         group_prefix: str = commands.parameter(description=msg["group_prefix"]),
     value: str = commands.parameter(
         description=msg["gsetnumberofplayers_value"])):
-        group = sanitize_group_name(group_prefix, ctx.author)
-        result_str = organize_group.set_key(sanitize_single(ctx.guild), group, organize_group.PLAYER_NUMBER, value)
+        group = sanitize(group_prefix)
+        result_str = organize_group.set_key(sanitize(ctx.guild.name), group, organize_group.PLAYER_NUMBER, value)
         await ctx.reply(result_str)
 
     @commands.command(help=msg["gremove_help"], aliases=['gkick'])
@@ -193,8 +189,8 @@ class GroupCommands(commands.Cog):
         group_prefix: str = commands.parameter(description=msg["group_prefix"]),
         player: discord.Member = commands.parameter(description=msg["gremove_player"])
     ):
-        group = sanitize_group_name(group_prefix, ctx.author)
-        status, result_str = organize_group.remove_player(sanitize_single(ctx.guild), group, player.id)
+        group = sanitize(group_prefix)
+        status, result_str = organize_group.remove_player(sanitize(ctx.guild.name), group, player.id)
 
         if status:
             group_role = get(ctx.guild.roles, name=group)
@@ -202,7 +198,7 @@ class GroupCommands(commands.Cog):
             if group_role in player.roles:
                 await player.remove_roles(group_role)
                 logging.debug(f"Removed role {group_role} from user {player}.")
-            text_channel = ctx.guild.get_channel(organize_group.get_main_channel(sanitize_single(ctx.guild), group))
+            text_channel = ctx.guild.get_channel(organize_group.get_main_channel(sanitize(ctx.guild.name), group))
             await text_channel.send(msg["gremove_info"].format(player=player.id))
 
         await ctx.reply(result_str)
@@ -213,17 +209,17 @@ class GroupCommands(commands.Cog):
     ):
         group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
 
-        if organize_group.is_owner(sanitize_single(ctx.guild), group, ctx.author.id):
+        if organize_group.is_owner(sanitize(ctx.guild.name), group, ctx.author.id):
             status, result_str = False, msg["join_own_group"]
         else:
-            status, result_str = organize_group.add_self(sanitize_single(ctx.guild), group, ctx.author.id)
+            status, result_str = organize_group.add_self(sanitize(ctx.guild.name), group, ctx.author.id)
 
         if status:
             # get the role by group name
             group_role = get(ctx.guild.roles, name=group)
             await ctx.author.add_roles(group_role)
             logging.debug(f"Added role {group_role} to user {ctx.author}.")
-            text_channel = ctx.guild.get_channel(organize_group.get_main_channel(sanitize_single(ctx.guild), group))
+            text_channel = ctx.guild.get_channel(organize_group.get_main_channel(sanitize(ctx.guild.name), group))
             await text_channel.send(msg["gjoin_info"].format(player=ctx.author.id))
 
         await ctx.reply(result_str)
@@ -236,7 +232,7 @@ class GroupCommands(commands.Cog):
         )
     ):
         group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
-        status, result_str = organize_group.remove_self(sanitize_single(ctx.guild), group, ctx.author.id)
+        status, result_str = organize_group.remove_self(sanitize(ctx.guild.name), group, ctx.author.id)
 
         if status:
             group_role = get(ctx.guild.roles, name=group)
@@ -245,7 +241,7 @@ class GroupCommands(commands.Cog):
             if group_role in user_roles:  # only remove if role really exists
                 await ctx.author.remove_roles(group_role)
                 logging.debug(f"Removed role {group_role} from user {ctx.author}.")
-            text_channel = ctx.guild.get_channel(organize_group.get_main_channel(sanitize_single(ctx.guild), group))
+            text_channel = ctx.guild.get_channel(organize_group.get_main_channel(sanitize(ctx.guild.name), group))
             await text_channel.send(msg["gremove_info"].format(player=ctx.author.id))
 
         await ctx.reply(result_str)
@@ -260,8 +256,8 @@ class GroupCommands(commands.Cog):
             default=False,
             description=msg["gaddchannel_voice"])
     ):
-        group_name = sanitize_group_name(group_prefix, ctx.author)
-        sanitized_guild = sanitize_single(ctx.guild)
+        group_name = sanitize(group_prefix)
+        sanitized_guild = sanitize(ctx.guild.name)
         category = discord.utils.get(ctx.guild.categories, name=group_name)
 
         # Handle Roles
