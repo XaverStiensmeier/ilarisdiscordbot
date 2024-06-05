@@ -41,7 +41,7 @@ if not config_file.exists():
         exit()
     copyfile(CONFIG/"settings.example.yml", config_file)
     token = args.get("token")
-    if token is None:
+    if token in [None, "YOUR_BOT_TOKEN"]:
         token = input("Please enter your bot token: ")
         with open(config_file, 'r', encoding="utf-8") as f:
             settings = yaml.safe_load(f)
