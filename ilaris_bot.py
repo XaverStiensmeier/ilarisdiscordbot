@@ -38,6 +38,8 @@ from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
 from utility.sanitizer import sanitize_single
 
+cfg = config  # TODO remove me
+msg = cfg.messages
 
 handler = logging.handlers.RotatingFileHandler(
     filename=DATA/'discord.log', 
@@ -104,7 +106,7 @@ async def on_command_completion(ctx):
     ))
     if (ctx.command.cog_name == "GroupCommands" 
         and ctx.command.name not in NO_UPDATE_COMMAND_LIST):
-        channel = discord.utils.get(ctx.guild.text_channels, name=cfg.settings.get("groups_channel"))
+        channel = discord.utils.get(ctx.guild.text_channels, name=config.settings.get("groups_channel"))
         if channel:
             await channel.purge()
             for result_str in organize_group.list_groups(sanitize_single(ctx.guild)):
@@ -115,11 +117,42 @@ async def on_command_completion(ctx):
 
 @bot.event
 async def on_reaction_add(reaction, user):
+    logging.warning("Reaction added")
     # Check if the reaction is on the bot's message and the emoji is the delete emoji
     if (reaction.message.author == bot.user and reaction.emoji == "❌" and user.guild_permissions.administrator
             and user != bot.user):
         # Delete the message
         await reaction.message.delete()
+
+
+from views.create_group import BaseModal
+import typing
+from views.base import BaseView
+
+@bot.command()
+async def modal_button(ctx: commands.Context):
+    """A command to test custom emoji buttons"""
+    view = BaseView(ctx.author)
+    view.add_item(discord.ui.Button(style=discord.ButtonStyle.gray, emoji="<a:loveroll:632598533316542465>"))
+    async def callback(interaction: discord.Interaction):
+        mymodal = BaseModal(title="Gruppe Erstellen")
+        mymodal.add_item(discord.ui.TextInput(label="Name", placeholder="Enter Text", min_length=1, max_length=100))
+        result = await interaction.response.send_modal(mymodal)
+        await view._edit(content=str(result))
+    view.children[0].callback = callback
+    view.message = await ctx.send("Custom Emoji Button", view=view)
+
+@bot.tree.command(description="A command to test modals")
+async def modalbutton(inter: discord.Interaction):
+    """A command to test modals"""
+    mymodal = BaseModal(title="Error Modal")
+
+    async def callback(interaction: discord.Interaction) -> None:
+        raise RuntimeError(typing.cast(discord.ui.TextInput[BaseModal], mymodal.children[0]).value)
+
+    mymodal.add_item(discord.ui.TextInput(label="Error", placeholder="Enter an error message", min_length=1, max_length=100))
+    mymodal.on_submit = callback
+    await inter.response.send_modal(mymodal)
 
 
 bot.run(token)  # , log_handler=handler
