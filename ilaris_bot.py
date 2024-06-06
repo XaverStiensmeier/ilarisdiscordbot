@@ -1,42 +1,21 @@
 #!/usr/bin/env python3
-# Imports
-from ast import parse
+import traceback
 import logging
 import logging.handlers
-import traceback
-
-import yaml
-from pathlib import Path
-
 import discord
 from discord.ext import commands
 from discord.ext.commands import after_invoke
 
-import argparse
-
 import config
-from config import DATA, ROOT
-
-CONFIG = ROOT / "config"
-
-NO_UPDATE_COMMAND_LIST = ["glist"]
-
-
-parser = argparse.ArgumentParser(description="Run the Ilaris Discord Bot")
-parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-parser.add_argument("--settings", type=str, help="Path to a settings file", default=CONFIG/"settings.yml")
-args = vars(parser.parse_args())
-
-config.load(config, args)
-
-with open(DATA/"token") as token_file:
-    token = token_file.readline()
-
-
+from config import DATA
+from config import messages as msg
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
-from utility.sanitizer import sanitize_single
+from utility.sanitizer import sanitize
+
+# TODO: not sure where this belongs:
+NO_UPDATE_COMMAND_LIST = ["glist"]
 
 cfg = config  # TODO remove me
 msg = cfg.messages
@@ -55,15 +34,12 @@ logging.basicConfig(
     handlers=[handler]
 )
 
-
-
-
-# Credentials
-intents = discord.Intents().all()
-# Create bot
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# Function to read CSV and create a dictionary
+# NOTE: all mentions are disabled by default (links work but without ping)
+bot = commands.Bot(
+    command_prefix='!',
+    intents=discord.Intents().all(),
+    allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
+)
 
 
 # Startup Information
@@ -79,7 +55,7 @@ async def on_ready():
 async def on_command_error(ctx, error):
     logging.info(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
-        response = cfg.commands.get(ctx.invoked_with, {}).get("reply")
+        response = config.commands.get(ctx.invoked_with, {}).get("reply")
         if response:
             await ctx.send(response)
             return
@@ -106,10 +82,11 @@ async def on_command_completion(ctx):
     ))
     if (ctx.command.cog_name == "GroupCommands" 
         and ctx.command.name not in NO_UPDATE_COMMAND_LIST):
-        channel = discord.utils.get(ctx.guild.text_channels, name=config.settings.get("groups_channel"))
+        channel = discord.utils.get(ctx.guild.text_channels,
+            name=config.settings.get("groups_channel"))
         if channel:
             await channel.purge()
-            for result_str in organize_group.list_groups(sanitize_single(ctx.guild)):
+            for result_str in organize_group.list_groups(sanitize(ctx.guild.name)):
                 await channel.send(result_str)
         else:
             logging.info("No group channel found.")
@@ -119,8 +96,10 @@ async def on_command_completion(ctx):
 async def on_reaction_add(reaction, user):
     logging.warning("Reaction added")
     # Check if the reaction is on the bot's message and the emoji is the delete emoji
-    if (reaction.message.author == bot.user and reaction.emoji == "❌" and user.guild_permissions.administrator
-            and user != bot.user):
+    if (reaction.message.author == bot.user 
+        and reaction.emoji == "❌" 
+        and user.guild_permissions.administrator
+        and user != bot.user):
         # Delete the message
         await reaction.message.delete()
 
@@ -155,4 +134,4 @@ async def modalbutton(inter: discord.Interaction):
     await inter.response.send_modal(mymodal)
 
 
-bot.run(token)  # , log_handler=handler
+bot.run(config.settings["token"])  # , log_handler=handler

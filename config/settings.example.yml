@@ -3,5 +3,4 @@ language: de
 # TODO: this should be moved to bot data and be changeble by the user at runtime
 groups_channel: spielrunden
 admins: []
-token: YOUR_BOT_TOKEN
 debug: false

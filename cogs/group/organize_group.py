@@ -59,6 +59,12 @@ ALLOWED_KEYS = [DATE, PLAYER_NUMBER, DESCRIPTION]
 if os.path.isfile(GROUPS_PATH):
     with open(GROUPS_PATH, "r") as yaml_file:
         groups = yaml.safe_load(yaml_file) or {}
+# TODO: else log error?
+
+
+def is_owner(guild, group, author_id):
+    group_data = groups.get(guild, {}).get(group)
+    return group_data[OWNER] == author_id
 
 
 @save_yaml
@@ -74,6 +80,7 @@ def list_groups(guild, show_full=False):
         if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
             return_str += f"**{group.replace('-', ' ').title()}**\n"
             return_str += f"{daten[DESCRIPTION]}\n"
+            return_str += f"**Spielleitung: <@{daten[OWNER]}>**\n"
             return_str += f"**{DATE_PRINT}**: {daten[DATE]}\n"
             return_str += f"**{PLAYER_NUMBER_PRINT}**: {len(daten[PLAYER])}/{daten[PLAYER_NUMBER]}\n"
             return_str += f"**Zum Beitreten**: `!gjoin {group}`\n\n"
@@ -84,13 +91,10 @@ def list_groups(guild, show_full=False):
 
 @save_yaml
 def create_group(guild, group, owner, category, date, player_number=4, description=""):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    guild_groups[group] = {OWNER: owner, CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number,
-                           DESCRIPTION: description,
-                           PLAYER: [], CHANNELS: []}
-
+    groups.setdefault(guild, {})
+    groups[guild][group] = {
+        OWNER: owner, CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number,
+        DESCRIPTION: description, PLAYER: [], CHANNELS: []}
     return_str = f"Neue Gruppe {group} angelegt.\n"
     return_str += f"Zum Channel hinzufügen: `!gaddchannel {'_'.join(group.split('_')[:-1])} new_channel`.\n"
     return_str += f"Zum Gruppe entfernen: `!gdestroy {'_'.join(group.split('_')[:-1])}`\n"
@@ -103,14 +107,14 @@ def group_exists(guild, group):
 
 
 @save_yaml
-def destroy_group(guild, group):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    if guild_groups.get(group):
-        group_dict = guild_groups.pop(group)
-        return 1, "Die Gruppe wurde gelöscht.", group_dict[PLAYER], group_dict[CHANNELS], group_dict[CATEGORY]
-    return False, "Die Gruppe existiert nicht.", [], [], []
+def destroy_group(guild, group, author=None):
+    group_data = groups.get(guild, {}).get(group)
+    if group_data is None:
+        return False, "Die Gruppe existiert nicht.", [], [], []
+    if author and group_data[OWNER] != author:
+        return False, "Du bist nicht der Besitzer der Gruppe.", [], [], []
+    group_dict = groups[guild].pop(group)
+    return 1, "Die Gruppe wurde gelöscht.", group_dict[PLAYER], group_dict[CHANNELS], group_dict[CATEGORY]
 
 
 def get_main_channel(guild, group):
@@ -211,7 +215,6 @@ def channel_exists(guild, group, channel):
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
-
     return guild_groups.get(group) and channel in guild_groups[group][CHANNELS]
 
 

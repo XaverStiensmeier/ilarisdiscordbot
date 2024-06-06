@@ -183,6 +183,7 @@ fabric.properties
 
 # idea folder, uncomment if you don't need it
 .idea
+.vscode
 
 # Large Folders
 resources/manoeverkarten/
@@ -195,3 +196,4 @@ data
 # 
 *.lock
 *.zip
+config/settings.yml
