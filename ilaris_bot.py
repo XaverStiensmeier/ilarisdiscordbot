@@ -32,15 +32,12 @@ logging.basicConfig(
     handlers=[handler]
 )
 
-
-
-
-# Credentials
-intents = discord.Intents().all()
-# Create bot
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# Function to read CSV and create a dictionary
+# NOTE: all mentions are disabled by default (links work but without ping)
+bot = commands.Bot(
+    command_prefix='!',
+    intents=discord.Intents().all(),
+    allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
+)
 
 
 # Startup Information
