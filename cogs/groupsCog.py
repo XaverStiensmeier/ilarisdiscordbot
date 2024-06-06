@@ -36,39 +36,38 @@ class GroupCommands(commands.Cog):
         sanitized_guild = sanitize(ctx.guild.name)
         everyone = ctx.guild.default_role
 
-        if not og.group_exists(sanitized_guild, group_name):
-            # create role
-            role = await ctx.guild.create_role(name=group_name)
-            logging.debug(f"Created role {role}.")
-            # add role to GM
-            await ctx.author.add_roles(role)
-            logging.debug(f"Added role {role} to user {ctx.author}.")
-            # permissions
-            overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
-                          role: discord.PermissionOverwrite(read_messages=True)}
-            logging.debug(f"Permission for role {role} set.")
-            # create category
-            category = await ctx.guild.create_category(name=group_name)
-            logging.debug(f"Created category {category}")
-            result_str = og.create_group(sanitized_guild, group_name, ctx.author.id, category.id, time,
-                                                     maximum_players, description)
-            # create channels
-            text_channel = await ctx.guild.create_text_channel(name="Text", overwrites=overwrites,
-                                                               category=category)
-            og.add_channel(sanitized_guild, group_name, text_channel.id)
-            logging.debug(f"Created text channel {text_channel}")
-
-            voice_channel = await ctx.guild.create_voice_channel(name="Voice",
-                                                                 overwrites=overwrites,
-                                                                 category=category)
-            og.add_channel(sanitized_guild, group_name, voice_channel.id)
-            logging.debug(f"Created voice channel {voice_channel}")
-            logging.debug("Added group.")
-            await text_channel.send(msg["gcreate_channel_created"].format(
-                author=ctx.author.id))
-            await ctx.reply(result_str)
-        else:  # TODO: avoid this huge if blocks.. instead invert logic and return after this reply
+        if og.group_exists(sanitized_guild, group_name):
             await ctx.reply(msg["gcreate_group_exists"].format(name=group_name))
+            return
+        # create role
+        role = await ctx.guild.create_role(name=group_name)
+        logging.debug(f"Created role {role}.")
+        # add role to GM
+        await ctx.author.add_roles(role)
+        logging.debug(f"Added role {role} to user {ctx.author}.")
+        # permissions
+        overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
+                        role: discord.PermissionOverwrite(read_messages=True)}
+        logging.debug(f"Permission for role {role} set.")
+        # create category
+        category = await ctx.guild.create_category(name=group_name)
+        logging.debug(f"Created category {category}")
+        result_str = og.create_group(sanitized_guild, group_name, ctx.author.id, 
+            category.id, time, maximum_players, description)
+        # create channels
+        text_channel = await ctx.guild.create_text_channel(name="Text", 
+            overwrites=overwrites, category=category)
+        og.add_channel(sanitized_guild, group_name, text_channel.id)
+        logging.debug(f"Created text channel {text_channel}")
+
+        voice_channel = await ctx.guild.create_voice_channel(
+            name="Voice", overwrites=overwrites, category=category)
+        og.add_channel(sanitized_guild, group_name, voice_channel.id)
+        logging.debug(f"Created voice channel {voice_channel}")
+        logging.debug("Added group.")
+        await text_channel.send(msg["gcreate_channel_created"].format(
+            author=ctx.author.id))
+        await ctx.reply(result_str)
 
     @commands.command(help=msg["glist_help"], aliases=['gliste'])
     async def glist(self, ctx, full: bool = commands.parameter(
