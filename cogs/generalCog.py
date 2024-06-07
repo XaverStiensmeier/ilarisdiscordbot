@@ -50,7 +50,7 @@ class GeneralCommands(commands.Cog):
     async def card(self, ctx, arg: str = commands.parameter(description=msg["card_desc"])):
         name, three_best = differ.closest_match(arg, cards)
         if name:
-            file_path = cfg.RESOURCES/"manoeverkarten"
+            file_path = RESOURCES/"manoeverkarten"
             file_path_jpg = os.path.join(file_path, f"{name}.jpg")
             file_path_png = os.path.join(file_path, f"{name}.png")
             if os.path.isfile(file_path_jpg):
