@@ -14,6 +14,10 @@ from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
 from utility.sanitizer import sanitize
 
+from views.group import BaseModal, GroupModal
+import typing
+from views.group import GroupView, NewGroupView
+
 # TODO: not sure where this belongs:
 NO_UPDATE_COMMAND_LIST = ["glist"]
 
@@ -104,34 +108,21 @@ async def on_reaction_add(reaction, user):
         await reaction.message.delete()
 
 
-from views.create_group import BaseModal
-import typing
-from views.base import BaseView
+@bot.command()
+async def view(ctx: commands.Context):
+    """A command to test views"""
+    view = NewGroupView(ctx.author)
+    text = "Um eine neue Gruppe zu erstellen, sende den vollständigen Befehl, \
+        oder klicke auf den Button."
+    view.message = await ctx.send(text, view=view)
+
 
 @bot.command()
 async def modal_button(ctx: commands.Context):
     """A command to test custom emoji buttons"""
-    view = BaseView(ctx.author)
-    view.add_item(discord.ui.Button(style=discord.ButtonStyle.gray, emoji="<a:loveroll:632598533316542465>"))
-    async def callback(interaction: discord.Interaction):
-        mymodal = BaseModal(title="Gruppe Erstellen")
-        mymodal.add_item(discord.ui.TextInput(label="Name", placeholder="Enter Text", min_length=1, max_length=100))
-        result = await interaction.response.send_modal(mymodal)
-        await view._edit(content=str(result))
-    view.children[0].callback = callback
+    view = GroupView(ctx.author)
     view.message = await ctx.send("Custom Emoji Button", view=view)
 
-@bot.tree.command(description="A command to test modals")
-async def modalbutton(inter: discord.Interaction):
-    """A command to test modals"""
-    mymodal = BaseModal(title="Error Modal")
-
-    async def callback(interaction: discord.Interaction) -> None:
-        raise RuntimeError(typing.cast(discord.ui.TextInput[BaseModal], mymodal.children[0]).value)
-
-    mymodal.add_item(discord.ui.TextInput(label="Error", placeholder="Enter an error message", min_length=1, max_length=100))
-    mymodal.on_submit = callback
-    await inter.response.send_modal(mymodal)
 
 
 bot.run(config.settings["token"])  # , log_handler=handler
