@@ -1,6 +1,8 @@
 import discord
 from discord.ui import TextInput, Select
 from views.base import BaseModal, BaseView
+from cogs.group import organize_group as og
+from utility.sanitizer import sanitize
 
 
 class GroupModal(BaseModal, title="Neue Gruppe"):
@@ -12,19 +14,19 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
     TODO: distinguish between create and edit mode, maybe track old group name (key)
     """
     name = TextInput(label="Name", placeholder="Name der Gruppe", min_length=1, max_length=80)
-    beschreibung = TextInput(label="Beschreibung", placeholder="Beschreibung der Gruppe", max_length=1400, min_length=1, style=discord.TextStyle.long)
-    # select = Select(options=[], min_values=0)
+    text = TextInput(label="Beschreibung", placeholder="Beschreibung der Gruppe", max_length=1400, min_length=1, style=discord.TextStyle.long)
+    places = TextInput(label="Plätze", placeholder="Spielerzahl", min_length=1, max_length=1, default=4)
+    time = TextInput(label="Uhrzeit", placeholder="HH:MM", min_length=5, max_length=5)
 
     def __init__(self):
-
-        spielerzahl = Select(options=[
-            discord.SelectOption(label=f"{i} SpielerInnen", value=str(i)) for i in range(1, 9)])
-        self.add_item(spielerzahl)
         super().__init__(timeout=460.0)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         # await super().on_submit(interaction)
-        print(self.name.value)
+        # Create group from input data
+        guild = sanitize(interaction.guild.name)
+        group = sanitize(self.name.value)  # TODO: add original name as title
+        og.create_group(self.name.value, self.text.value, self.places.value, self.time.value)
         await interaction.response.send_message("Modal Submitted", ephemeral=True)
 
 

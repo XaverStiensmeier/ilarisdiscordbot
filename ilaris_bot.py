@@ -65,18 +65,21 @@ async def on_command_error(ctx, error):
             return
         else:
             await ctx.send(msg["cmd_not_found"])
-    elif isinstance(error, commands.errors.MissingRequiredArgument) or \
-        isinstance(error, commands.errors.BadArgument):
+    elif (isinstance(error, commands.errors.MissingRequiredArgument) 
+        or isinstance(error, commands.errors.BadArgument)):
+        view = None
+        if ctx.command.name == "gcreate":
+            view = NewGroupView(ctx.author)
         await ctx.send(msg["bad_args"].format(
             pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature
-        ))
+        ), view=view)
     elif isinstance(error, Exception):
         if ctx.command:
             info = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
         else:
             info = msg["unexpected_error"]
         await ctx.send(msg["cmd_failed"].format(info=info))
-    raise error
+    raise error  # TODO: should we raise all errors or only those not replied?
 
 
 @bot.event

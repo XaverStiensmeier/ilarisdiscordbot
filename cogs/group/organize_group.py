@@ -47,7 +47,6 @@ def save_yaml(original_function):
 def sigterm_handler(_signo, _stack_frame):
     sys.exit(0)
 
-
 signal.signal(signal.SIGINT, sigterm_handler)
 signal.signal(signal.SIGTERM, sigterm_handler)
 
@@ -66,6 +65,38 @@ def is_owner(guild, group, author_id):
     group_data = groups.get(guild, {}).get(group)
     return group_data[OWNER] == author_id
 
+
+# TODO: create a group class/model and maybe a group manager..
+# class Group():
+#     def __init__(self, guild, group, owner, category, date=None, player_number=4, description=""):
+#         self.guild = guild
+#         self.group = group
+#         self.owner = owner
+#         self.category = category
+#         self.date = date
+#         self.player_number = player_number
+#         self.description = description
+#         self.players = []
+#         self.channels = []
+    
+#     def as_dict(self):
+#         return {
+#             OWNER: self.owner.id, 
+#             CATEGORY: self.category, DATE: self.date,
+#                 PLAYER_NUMBER: self.player_number, DESCRIPTION: self.description,
+#                 PLAYER: self.players, CHANNELS: self.channels}
+    
+#     @classmethod
+#     def from_dict(cls, data):
+#         return cls(data["guild"], data["group"], data[OWNER], data[CATEGORY],
+#                    data[DATE], data[PLAYER_NUMBER], data[DESCRIPTION])
+
+#     @property
+#     def player_count(self):
+#         return len(self.players)
+
+#     def __str__(self):
+#         return f"{self.group} ({self.owner})"
 
 @save_yaml
 def list_groups(guild, show_full=False):
@@ -91,6 +122,16 @@ def list_groups(guild, show_full=False):
 
 @save_yaml
 def create_group(guild, group, owner, category, date, player_number=4, description=""):
+    """adds a new group to the groups dict and updates the groups.yml file. 
+    @param guild: guild id as string
+    @param group: (sanitized) group name
+    @param owner: owner id as string
+    @param category: discord category (group of channels) id as string
+    @param date: date and time of the event  TODO: this should be optional imho
+    @param player_number: maximum number of players, optional, default is 4
+    @param description: description of the event, optional, default is an empty string 
+    @return: string with instructions for the user
+    """
     groups.setdefault(guild, {})
     groups[guild][group] = {
         OWNER: owner, CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number,
