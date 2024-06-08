@@ -1,9 +1,11 @@
 import discord
 from discord import Interaction
-from discord.ui import TextInput, Select
+from discord import ButtonStyle
+from discord.ui import TextInput, button
 from views.base import BaseModal, BaseView
 from cogs.group import organize_group as og
 from utility.sanitizer import sanitize
+from config import messages as msg
 
 
 class GroupModal(BaseModal, title="Neue Gruppe"):
@@ -53,19 +55,8 @@ class GroupView(BaseView):
     interaction = None
     message = None
     group = None  # for now sanitized name, turns into group object later
-
-    # adding a component using it's decorator (fancy shit)
-    @discord.ui.button(label="Bearbeiten", style=discord.ButtonStyle.blurple)
-    async def edit(self, inter, button) -> None:
-        """ open modal to edit group on button click
-        TODO: not fully implemented yet, modal is just an example (not saving)
-        """
-        # group_form = GroupModal()
-        # await inter.response.send_modal(group_form)
-        print(inter.name)
-        # await inter.response.edit_message("Noch nicht implementiert", view=self)
     
-    @discord.ui.button(label="Beitreten", style=discord.ButtonStyle.green)
+    @button(label="Beitreten", emoji="🍻", style=ButtonStyle.green)
     async def join(self, inter: Interaction, button) -> None:
         if self.group is None:
             status, answer = False, "Gruppe nicht gesetzt."
@@ -76,7 +67,29 @@ class GroupView(BaseView):
                 inter.user.id)
         # ephemeral: only the interacting user sees the response.
         await inter.response.send_message(answer, ephemeral=True)
-    
+
+    # adding a component using it's decorator (fancy shit)
+    @button(label="Bearbeiten", emoji="✏️", style=ButtonStyle.blurple)
+    async def edit(self, inter, button) -> None:
+        """ open modal to edit group on button click
+        TODO: not fully implemented yet, modal is just an example (not saving)
+        """
+        # group_form = GroupModal()
+        # await inter.response.send_modal(group_form)
+        print(inter.name)
+        # await inter.response.edit_message("Noch nicht implementiert", view=self)
+
+    @button(label="Löschen", emoji="🗑️", style=ButtonStyle.red)
+    async def destroy(self, inter, button) -> None:
+        """ destroy a group from button click
+        TODO: check permissions, maybe confirm dialog?
+        """
+        guild = sanitize(inter.guild.name)
+        if not og.is_owner(guild, self.group, inter.user.id):
+            await inter.response.send_message(msg["not_owner"], ephemeral=True)
+            return
+        status, answer = og.destroy_group(guild, self.group, inter.user.id)[:2]
+        await inter.response.send_message(answer, ephemeral=True)
     # async def open_form(interaction: discord.Interaction):
     #     print("button pressed")
 

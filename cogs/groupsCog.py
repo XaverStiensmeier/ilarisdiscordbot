@@ -77,9 +77,11 @@ class GroupCommands(commands.Cog):
     ):
         # for group in og.list_groups(ctx):
             # group.message = await ctx.reply(group.detail_text, view=group.view)
-        for result_str in og.list_groups(sanitize(ctx.guild.name), full):
-            view = GroupView()  # buttons
-            view.group = result_str.split(" ")[0]  # NOTE: temporary hack.. until #75
+        for i, result_str in enumerate(og.list_groups(sanitize(ctx.guild.name), full)):
+            view = None
+            if i > 0:
+                view = None if i == 0 else GroupView(ctx.author)  # buttons
+                view.group = result_str.split(";")[0] # NOTE: temporary hack.. until #75
             await ctx.reply(result_str, view=view)
 
     async def delete_group(self, ctx, group_name):

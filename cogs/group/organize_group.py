@@ -121,9 +121,9 @@ def list_groups(guild, show_full=False):
             return_str += f"{daten[DESCRIPTION]}\n"
             return_str += f"**Spielleitung: <@{daten[OWNER]}>**\n"
             return_str += f"**{DATE_PRINT}**: {daten[DATE]}\n"
-            return_str += f"**{PLAYER_NUMBER_PRINT}**: {len(daten[PLAYER])}/{daten[PLAYER_NUMBER]}\n"
-            return_str += f"**Zum Beitreten**: `!gjoin {group}`\n\n"
-            return_str += "_ _"
+            return_str += f"**{PLAYER_NUMBER_PRINT}**: {len(daten[PLAYER])}/{daten[PLAYER_NUMBER]}"
+            # return_str += f"**Zum Beitreten**: `!gjoin {group}`"
+            # return_str += "_ _"
             return_strs.append(return_str)
     return return_strs
 
@@ -283,4 +283,5 @@ def is_owner(guild, group, author_id):
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
+    print(guild_groups[group][OWNER], author_id)
     return guild_groups.get(group) and guild_groups[group][OWNER] == author_id
