@@ -114,7 +114,10 @@ def list_groups(guild, show_full=False):
     for group, daten in guild_groups.items():
         return_str = ""
         if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
-            return_str += f"**{group.replace('-', ' ').title()}**\n"
+            # temp hack to pass group name until #75. 
+            # We shoul keep a title and a slug! this string operations are not reversible!
+            return_str += f"{group};\n"
+            return_str += f"**{group.replace('-', ' ').title()}**\n"  
             return_str += f"{daten[DESCRIPTION]}\n"
             return_str += f"**Spielleitung: <@{daten[OWNER]}>**\n"
             return_str += f"**{DATE_PRINT}**: {daten[DATE]}\n"

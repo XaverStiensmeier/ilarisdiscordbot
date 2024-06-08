@@ -9,7 +9,7 @@ from config import messages as msg
 
 from cogs.group import organize_group as og
 from utility.sanitizer import sanitize
-
+from views.group import GroupView
 
 class GroupCommands(commands.Cog):
     """
@@ -39,6 +39,8 @@ class GroupCommands(commands.Cog):
         if og.group_exists(sanitized_guild, group_name):
             await ctx.reply(msg["gcreate_group_exists"].format(name=group_name))
             return
+        # TODO: creating roles categories, channels etc, should not be part of
+        # organize_group not the command, to reuse it in other commands/modals.
         # create role
         role = await ctx.guild.create_role(name=group_name)
         logging.debug(f"Created role {role}.")
@@ -73,8 +75,12 @@ class GroupCommands(commands.Cog):
     async def glist(self, ctx, full: bool = commands.parameter(
         default=False, description=msg["glist_desc"])
     ):
+        # for group in og.list_groups(ctx):
+            # group.message = await ctx.reply(group.detail_text, view=group.view)
         for result_str in og.list_groups(sanitize(ctx.guild.name), full):
-            await ctx.reply(result_str)
+            view = GroupView()  # buttons
+            view.group = result_str.split(" ")[0]  # NOTE: temporary hack.. until #75
+            await ctx.reply(result_str, view=view)
 
     async def delete_group(self, ctx, group_name):
         sanitized_guild = sanitize(ctx.guild.name)
