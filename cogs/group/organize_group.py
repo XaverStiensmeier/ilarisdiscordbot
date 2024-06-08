@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-# Imports
+"""
+I would like to turn this completly into a Group (and maybe GroupManager) class.
+Most of the methods can probably turned into methods very simpple and makes it a lot
+easier to use and maintain. Views and Modals could also be generated from a group class
+instead of having their own classes. Read more: #75
+"""
 import signal
 import sys
 import os
@@ -199,6 +204,12 @@ def remove_player(guild, group, player):
 
 @save_yaml
 def add_self(guild, group, player):
+    """adds a player to a group
+    TODO: should be named add_player?
+    @param guild: guild id as string
+    @param group: (sanitized) group name
+    @param player: player id as string
+    """
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
@@ -221,6 +232,12 @@ def add_self(guild, group, player):
 
 @save_yaml
 def remove_self(guild, group, player):
+    """removes a player from a group
+    TODO: should be named remove_player?
+    @param guild: guild id as string
+    @param group: (sanitized) group name
+    @param player: player id as string
+    """
     if not groups.get(guild):
         groups[guild] = {}
     guild_groups = groups[guild]
