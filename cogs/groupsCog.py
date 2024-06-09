@@ -22,7 +22,9 @@ class GroupCommands(commands.Cog):
     @commands.command(help=msg["gcreate_help"], aliases=['gneu'])
     async def gcreate(self, ctx, 
         group: str = commands.parameter(description=msg["gcreate_group"]),
-        time: str = commands.parameter(description=msg["gcreate_time"]),
+        time: str = commands.parameter(
+            default="",
+            description=msg["gcreate_time"]),
         maximum_players: int = commands.parameter(
             default=4,
             description=msg["gcreate_maxplayers"]
@@ -32,6 +34,7 @@ class GroupCommands(commands.Cog):
             description=msg["gcreate_desc"]
         )
     ):
+        # group = Group()
         group_name = sanitize(group)
         sanitized_guild = sanitize(ctx.guild.name)
         everyone = ctx.guild.default_role
@@ -54,8 +57,10 @@ class GroupCommands(commands.Cog):
         # create category
         category = await ctx.guild.create_category(name=group_name)
         logging.debug(f"Created category {category}")
+        sanitized_guild = ctx.guild.id  # TODO: current overwrite to test id based keys 
         result_str = og.create_group(sanitized_guild, group_name, ctx.author.id, 
             category.id, time, maximum_players, description)
+        
         # create channels
         text_channel = await ctx.guild.create_text_channel(name="Text", 
             overwrites=overwrites, category=category)
