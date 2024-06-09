@@ -4,41 +4,51 @@ import re
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import Context, Bot, parameter, Cog, command
 from discord.utils import get
 from config import messages as msg
 
 from cogs.group import organize_group as og
 from cogs.group.organize_group import Group
 from utility.sanitizer import sanitize
-from views.group import GroupView
+from cogs.group.organize_group import NewGroupView
 
-class GroupCommands(commands.Cog):
-    """
-    Commands for handling groups
+
+class GroupCommands(Cog):
+    """ Commands for handling groups
+    This cog contains all commands related to creating, managing and joining groups.
+    All logic and data operations should be part of `group.organize_group.Group`.
+    This class focus on handling the command itself (i.e. parsing parameters).
+    TODO: we can add command specific error handling here too. i.e. 
+    @gcreate.error
+    async def gcreate_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send('Some required arguments are missing.')
+        # other errors should be propagated to more general handler (needs to be tested)
     """
 
-    def __init__(self, bot):
+    def __init__(self, bot: Bot):
         self.bot = bot
 
-    @commands.command(help=msg["gcreate_help"], aliases=['gneu'])
+    @command(help=msg["gcreate_help"], aliases=['gneu'])
     async def gcreate(self, 
-        ctx: commands.Context, 
-        name: str = commands.parameter(description=msg["gcreate_group"]),
-        time: str = commands.parameter(
+        ctx: Context, 
+        name: str = parameter(description=msg["gcreate_group"]),
+        time: str = parameter(
             default="",
             description=msg["gcreate_time"]),
-        maximum_players: int = commands.parameter(
+        maximum_players: int = parameter(
             default=4,
             description=msg["gcreate_maxplayers"]
         ),
-        description: str = commands.parameter(
+        description: str = parameter(
             default=msg["gcreate_desc_default"],
             description=msg["gcreate_desc"]
         )
     ):
         group = Group(
             name=name,  # slug generated from name
-            time=time,
+            date=time,
             max_players=maximum_players,
             description=description,
             ctx=ctx,  # sets owner and guild id
@@ -47,21 +57,26 @@ class GroupCommands(commands.Cog):
             await ctx.reply(msg["gcreate_group_exists"].format(name=name), ephemeral=True)
             return
         group.save()  # writes to yaml
-        group.setup_guild()  # create role, category and channels
-        ctx.reply(msg["gcreate_success"].format(group=group), ephemeral=True)
+        await group.setup_guild()  # create role, category and channels
+        await ctx.reply(msg["gcreate_success"].format(group=group), ephemeral=True)
 
-    @commands.command(help=msg["glist_help"], aliases=['gliste'])
-    async def glist(self, ctx, full: bool = commands.parameter(
-        default=False, description=msg["glist_desc"])
-    ):
-        # for group in og.list_groups(ctx):
-            # group.message = await ctx.reply(group.detail_text, view=group.view)
-        for i, result_str in enumerate(og.list_groups(sanitize(ctx.guild.name), full)):
-            view = None
-            if i > 0:
-                view = None if i == 0 else GroupView(ctx.author)  # buttons
-                view.group = result_str.split(";")[0] # NOTE: temporary hack.. until #75
-            await ctx.reply(result_str, view=view)
+    @gcreate.error
+    async def gcreate_error(self, ctx, error):
+        if (isinstance(error, commands.errors.MissingRequiredArgument) 
+        or isinstance(error, commands.errors.BadArgument)):
+            view = NewGroupView(ctx.author)
+            await ctx.send(msg["gcreate_bad_args"].format(
+                pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature
+            ), view=view)
+            raise commands.CommandInvokeError(error)  # prevent propagation
+
+    @command(help=msg["glist_help"], aliases=['gliste'])
+    async def glist(self, ctx, full: bool = parameter(
+            default=False, description=msg["glist_desc"])
+        ):
+        await ctx.reply(msg["glist_header"])
+        for group in Group.groups_from_guild(ctx.guild.id):
+            group.message = await ctx.reply(group.info_message, view=group.info_view(ctx.author))
 
     async def delete_group(self, ctx, group_name):
         sanitized_guild = sanitize(ctx.guild.name)
@@ -92,10 +107,10 @@ class GroupCommands(commands.Cog):
             await member.send(msg["group_deleted_info"].format(author=ctx.author, name=group_name))
         await ctx.reply(result_str)
 
-    @commands.command(help=msg["gdestroy_help"], aliases=['gentfernen'])
+    @command(help=msg["gdestroy_help"], aliases=['gentfernen'])
     async def gdestroy(
         self, ctx, 
-        group_prefix: str = commands.parameter(
+        group_prefix: str = parameter(
             description=msg["group_prefix"]
         )
     ):
@@ -103,56 +118,57 @@ class GroupCommands(commands.Cog):
         group_name = sanitize(group_prefix)
         await self.delete_group(ctx, group_name)
 
-    @commands.command(
+    @command(
         help=msg["gpurge_help"],
         aliases=['gbereinigen'],
         hidden=True)
+
     @commands.has_permissions(administrator=True)
     async def gpurge(
         self, ctx, 
-        group_name: str = commands.parameter(
+        group_name: str = parameter(
             description=msg["gpurge_group"]
         )
     ):
         await self.delete_group(ctx, group_name)
 
-    @commands.command(help=msg["gset_help"], aliases=['gsetze'])
+    @command(help=msg["gset_help"], aliases=['gsetze'])
     async def gset(
         self, ctx, 
-        group_prefix: str = commands.parameter(
+        group_prefix: str = parameter(
             description=msg["group_prefix"]
         ),
-        key: str = commands.parameter(
+        key: str = parameter(
             description=msg["gset_key"].format(
                 date=og.DATE,
                 players=og.PLAYER_NUMBER,
                 description=og.DESCRIPTION
         )),
-        value: str = commands.parameter(
+        value: str = parameter(
             description=msg["gset_value"])):
         group = sanitize(group_prefix)
         result_str = og.set_key(sanitize(ctx.guild.name), group, key, value)
         await ctx.reply(result_str)
 
-    @commands.command(
+    @command(
         help=msg["gsetdate_help"],
         aliases=['gsetzedatum'])
     async def gsetdate(self, ctx, 
-        group_prefix: str = commands.parameter(description=msg["group_prefix"]),
-        value: str = commands.parameter(
+        group_prefix: str = parameter(description=msg["group_prefix"]),
+        value: str = parameter(
             description=msg["gsetdate_value"])
     ):
         group = sanitize(group_prefix)
         result_str = og.set_key(sanitize(ctx.guild.name), group, og.DATE, value)
         await ctx.reply(result_str)
 
-    @commands.command(
+    @command(
         help=msg["gsetdescription_help"],
         aliases=['gsetzebeschreibung'])
     async def gsetdescription(
         self, ctx, 
-        group: str = commands.parameter(description=msg["gsetdescription_group"]),
-        value: str = commands.parameter(
+        group: str = parameter(description=msg["gsetdescription_group"]),
+        value: str = parameter(
             description=msg["gsetdescription_value"])
     ):
         group = sanitize(group)
@@ -164,13 +180,13 @@ class GroupCommands(commands.Cog):
         result_str = og.set_key(sanitize(ctx.guild.name), group, og.DESCRIPTION, value)
         await ctx.reply(result_str)
 
-    @commands.command(
+    @command(
         help=msg["gsetnumberofplayers_help"],
         aliases=['gsetzespieleranzahl'])
     async def gsetnumberofplayers(
         self, ctx,
-        group_prefix: str = commands.parameter(description=msg["group_prefix"]),
-    value: str = commands.parameter(
+        group_prefix: str = parameter(description=msg["group_prefix"]),
+    value: str = parameter(
         description=msg["gsetnumberofplayers_value"])):
         group = sanitize(group_prefix)
         guild = sanitize(ctx.guild.name)
@@ -180,11 +196,11 @@ class GroupCommands(commands.Cog):
         result_str = og.set_key(guild, group, og.PLAYER_NUMBER, value)
         await ctx.reply(result_str)
 
-    @commands.command(help=msg["gremove_help"], aliases=['gkick'])
+    @command(help=msg["gremove_help"], aliases=['gkick'])
     async def gremove(
         self, ctx, 
-        group: str = commands.parameter(description=msg["group_prefix"]),
-        player: discord.Member = commands.parameter(description=msg["gremove_player"])
+        group: str = parameter(description=msg["group_prefix"]),
+        player: discord.Member = parameter(description=msg["gremove_player"])
     ):
         group = sanitize(group)
         guild = sanitize(ctx.guild.name)
@@ -203,9 +219,9 @@ class GroupCommands(commands.Cog):
 
         await ctx.reply(result_str)
 
-    @commands.command(help=msg["gjoin_help"], aliases=['gbeitreten'])
+    @command(help=msg["gjoin_help"], aliases=['gbeitreten'])
     async def gjoin(self, ctx, 
-        group: str = commands.parameter(description=msg["gjoin_group"])
+        group: str = parameter(description=msg["gjoin_group"])
     ):
         group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
 
@@ -224,10 +240,10 @@ class GroupCommands(commands.Cog):
 
         await ctx.reply(result_str)
 
-    @commands.command(help=msg["gleave_help"], aliases=['gaustreten'])
+    @command(help=msg["gleave_help"], aliases=['gaustreten'])
     async def gleave(
         self, ctx, 
-        group: str = commands.parameter(
+        group: str = parameter(
             description=msg["gleave_group"]
         )
     ):
@@ -247,13 +263,13 @@ class GroupCommands(commands.Cog):
 
         await ctx.reply(result_str)
 
-    @commands.command(help=msg["gaddchannel_help"],
+    @command(help=msg["gaddchannel_help"],
                       aliases=['gchannelhinzufügen'])
     async def gaddchannel(
-        self, ctx, group_prefix: str = commands.parameter(description=msg["group_prefix"]),
-        channel_name: str = commands.parameter(
+        self, ctx, group_prefix: str = parameter(description=msg["group_prefix"]),
+        channel_name: str = parameter(
             description=msg["gaddchannel_channel"]),
-        is_voice: bool = commands.parameter(
+        is_voice: bool = parameter(
             default=False,
             description=msg["gaddchannel_voice"])
     ):

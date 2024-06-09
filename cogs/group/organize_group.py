@@ -14,14 +14,18 @@ import discord
 from filelock import FileLock
 from typing import Union, List
 from discord import abc  # discords base classes
-from discord import CategoryChannel, Interaction, Guild, Role, PermissionOverwrite
+from discord import (CategoryChannel, Interaction, Guild, Role, PermissionOverwrite,
+    Interaction, ButtonStyle)
+from discord.ui import TextInput, button
 from discord.ext.commands import Context
-from utility.sanitizer import sanitize
-from views.group import GroupView  # group buttons
 
+from utility.sanitizer import sanitize
 from config import DATA
 from config import messages as msg
-
+from views.base import BaseModal, BaseView
+from cogs.group import organize_group as og
+from utility.sanitizer import sanitize
+from config import messages as msg
 
 # module level functions and variables (cache).
 
@@ -59,50 +63,53 @@ else:
 
 def get_id(object):
     """utility function to get id from discord object or string"""
+    if object is None:
+        return object
     if isinstance(object, str) or isinstance(object, int):
         return int(object)
     return object.id
 
 
-@save_yaml  # empty dict written in case of not existence.. maybe do this in the wrapper?
-def list_groups(guild, show_full=False):
-    guilds.setdefault(guild, {})
-    return_str = HOW_TO_JOIN
-    return_str += "**\- Gruppen Liste -**\n"
-    return_strs = [return_str]
-    for group, daten in guilds[guild].items():
-        return_str = ""
-        if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
-            # temp hack to pass group name until #75. 
-            # We shoul keep a title and a slug! this string operations are not reversible!
-            return_str += f"{group};\n"
-            return_str += f"**{group.replace('-', ' ').title()}**\n"  
-            return_str += f"{daten[DESCRIPTION]}\n"
-            return_str += f"**Spielleitung: <@{daten[OWNER]}>**\n"
-            return_str += f"**{DATE_PRINT}**: {daten[DATE]}\n"
-            return_str += f"**{PLAYER_NUMBER_PRINT}**: {len(daten[PLAYER])}/{daten[PLAYER_NUMBER]}"
-            # return_str += f"**Zum Beitreten**: `!gjoin {group}`"
-            # return_str += "_ _"
-            return_strs.append(return_str)
-    return return_strs
+# @save_yaml  # empty dict written in case of not existence.. maybe do this in the wrapper?
+# def list_groups(guild, show_full=False):
+#     guilds.setdefault(guild, {})
+#     return_str = HOW_TO_JOIN
+#     return_str += "**\- Gruppen Liste -**\n"
+#     return_strs = [return_str]
+#     for group, daten in guilds[guild].items():
+#         return_str = ""
+#         if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
+#             # temp hack to pass group name until #75. 
+#             # We shoul keep a title and a slug! this string operations are not reversible!
+#             return_str += f"{group};\n"
+#             return_str += f"**{group.replace('-', ' ').title()}**\n"  
+#             return_str += f"{daten[DESCRIPTION]}\n"
+#             return_str += f"**Spielleitung: <@{daten[OWNER]}>**\n"
+#             return_str += f"**{DATE_PRINT}**: {daten[DATE]}\n"
+#             return_str += f"**{PLAYER_NUMBER_PRINT}**: {len(daten[PLAYER])}/{daten[PLAYER_NUMBER]}"
+#             # return_str += f"**Zum Beitreten**: `!gjoin {group}`"
+#             # return_str += "_ _"
+#             return_strs.append(return_str)
+#     return return_strs
 
 
 class Group():
     """ This class makes all group data and ui elements easy accessible and provides
     convenient methods to interact with the group. It's primarily used from within group
     commands and views.
-    NOTE: for now I decided to track only player ids instead of objects, because fetching
-    the players by id is expensive and not always necessary. i.e. getting player names
-    requires slow (and limited) async http requests to discord api and can often be used
-    as <@id> instead. To have access to the discord objects I plan to add add fetch_* 
-    methods.
+    Most parameters of this class directly map to their dictionary representation.
+    However, the init function is quite flexible in terms of input types, to make it
+    easy to use in different scenarios. Methods use ids of discord objects when possible
+    to avoid unnecessary calls to discord API. The methods that require such calls
+    are usually async (i.e. setup_roles, create_channels).
     """
     
     def __init__(self, name: str=None, slug: str=None, ctx: Context=None, 
-            inter: Interaction=None, guild: Union[Guild, int]=None,
-            owner: Union[abc.User, int]=None, category: Union[CategoryChannel, int]=None,
-            date: str="", max_players: int=4, description: str="", players: List[int]=[],
-    ) -> None:
+        inter: Interaction=None, guild: Union[Guild, int]=None,
+        owner: Union[abc.User, int]=None, category: Union[CategoryChannel, int]=None,
+        date: str="", max_players: int=4, description: str="", players: List[int]=[],
+        channels: List[int]=[]  # maybe remove?
+        ) -> None:
         """Creates a new group object.
         The init function is a bit massive, but this allows to use it very flexible,
         with different types of input. When using in context of
@@ -149,7 +156,7 @@ class Group():
         return cls.from_dict(guilds.get(guild_id, {}).get(group_slug))
 
     @classmethod
-    def groups_from_guild(cls, guild_id):
+    def groups_from_guild(cls, guild_id: int):
         """Returns all groups from a guild."""
         groups_data = guilds.get(guild_id, {})
         groups = [Group.from_dict(data) for data in groups_data.values()]
@@ -171,21 +178,16 @@ class Group():
         for p in self.players:
             await self.ctx.guild.get_member(p).add_roles(role)
     
-    async def setup_guild(self):
-        """Creates and assignes roles/channels permissions for this group."""
-        self.setup_role()
-        self.create_channels()
-    
     async def create_channels(self, welcome=True):
         """Creates channels for the group.
         TODO: do we need to track the channels? Is tracking category not enough?
         """
-        guild = self.ctx.guild
+        guild = self.ctx.guild  # TODO: better fetch from self.guild here?
         if not guild or not self.role:
             raise ValueError("Guild and role are required to setup channels.")
         permissions = {
             guild.default_role: PermissionOverwrite(read_messages=False),
-            self.role: PermissionOverwrite(read_messages=True)}
+            guild.get_role(self.role): PermissionOverwrite(read_messages=True)}
         category = await guild.create_category(name=self.slug)  # TODO: name or slug?
         text = await guild.create_text_channel(name="Text", 
             overwrites=permissions, category=category)
@@ -194,13 +196,23 @@ class Group():
             name="Voice", overwrites=permissions, category=category)
         if welcome:
             await text.send(msg["gcreate_channel_created"].format(
-                author=self.ctx.author.id))
+                author=self.user.id))
+
+    async def setup_guild(self):
+        """Creates and assignes roles/channels permissions for this group."""
+        await self.setup_role()
+        await self.create_channels()
 
     def __str__(self):
         """String representation of a group. str(group), print(group)..."""
         return f"{self.name} ({self.owner})"
     
-    def detail_view(self, user: abc.User=None):
+    @property
+    def info_message(self):
+        """message content for !ginfo and the like"""
+        return msg["group_info"].format(group=self)
+    
+    def info_view(self, user: abc.User=None):
         """Returns buttons for group details for this group.
         @param user: user object, required if no ctx or inter is set.
         """
@@ -212,6 +224,8 @@ class Group():
     def as_dict(self):
         """convert object into dict (trivial rn, but could be extended later)"""
         return {
+            "name": self.name,
+            "slug": self.slug,
             "owner": self.owner,
             "category": self.category,
             "date": self.date, 
@@ -254,6 +268,105 @@ class Group():
             return self.inter.user
         return None
     
+    @property
+    def exists(self):
+        return self.slug in guilds.get(self.guild, {})
+
+
+
+
+class GroupModal(BaseModal, title="Neue Gruppe"):
+    """ Modal for creating or editing a group
+    This popup can only be created from an interaction (i.e. button click or /command),
+    but not from simple !commands. The fields can be set as class variables and the user
+    input will be accessible from the instance as self.<field_name>.value.
+    TODO: allow to pass a group and prefill the fields for edit.
+    TODO: distinguish between create and edit mode, maybe track old group name (key)
+    """
+    name = TextInput(label="Name", placeholder="Name der Gruppe", min_length=1, max_length=80)
+    text = TextInput(label="Beschreibung", placeholder="Beschreibung der Gruppe", max_length=1400, min_length=1, style=discord.TextStyle.long)
+    places = TextInput(label="Plätze", placeholder="Spielerzahl", min_length=1, max_length=1, default=4)
+    time = TextInput(label="Uhrzeit", placeholder="HH:MM", min_length=5, max_length=5)
+
+    def __init__(self, name=None):
+        self.group = name
+        super().__init__(timeout=460.0)
+
+    async def on_submit(self, inter: Interaction) -> None:
+        # await super().on_submit(interaction)
+        group = Group(  # create object from form input
+            name=self.name.value,
+            description=self.text.value,
+            max_players=int(self.places.value),
+            time=self.time.value,
+            inter=inter,
+        )
+        group.save()  # write to yaml
+        group.setup_guild(inter.guild)  # channels and roles etc..
+        await inter.response.send_message(
+            ":white_check_mark: Gruppe erstellt!", ephemeral=True)
+
+
+class GroupView(BaseView):
+    """ Group detail View
+    This is a placeholder for now. A view is can be attached to a message and contains
+    interactive elements like buttons or select menus. Creating a class like this might 
+    help to quickly create messages with group details and options to interact with them.
+    TODO: Buttons like [Join], [Leave], [Edit], [Delete], [Anounce]
+    TODO: Possible to hide buttons from non-owners or non-members?
+    TODO: Generate this view from a group dictionary or name
+    """
+    interaction = None
+    message = None
+    group = None  # for now sanitized name, turns into group object later
+    
+    @button(label="Beitreten", emoji="🍻", style=ButtonStyle.green)
+    async def join(self, inter: Interaction, button) -> None:
+        if self.group is None:
+            status, answer = False, "Gruppe nicht gesetzt."
+        else:
+            status, answer = og.add_self(
+                sanitize(inter.guild.name),
+                sanitize(self.group),
+                inter.user.id)
+        # ephemeral: only the interacting user sees the response.
+        await inter.response.send_message(answer, ephemeral=True)
+
+    # adding a component using it's decorator (fancy shit)
+    @button(label="Bearbeiten", emoji="✏️", style=ButtonStyle.blurple)
+    async def edit(self, inter, button) -> None:
+        """ open modal to edit group on button click
+        TODO: not fully implemented yet, modal is just an example (not saving)
+        """
+        # group_form = GroupModal()
+        # await inter.response.send_modal(group_form)
+        print(inter.name)
+        # await inter.response.edit_message("Noch nicht implementiert", view=self)
+
+    @button(label="Löschen", emoji="🗑️", style=ButtonStyle.red)
+    async def destroy(self, inter, button) -> None:
+        """ destroy a group from button click
+        TODO: check permissions, maybe confirm dialog?
+        """
+        guild = sanitize(inter.guild.name)
+        if not og.is_owner(guild, self.group, inter.user.id):
+            await inter.response.send_message(msg["not_owner"], ephemeral=True)
+            return
+        status, answer = og.destroy_group(guild, self.group, inter.user.id)[:2]
+        await inter.response.send_message(answer, ephemeral=True)
+    # async def open_form(interaction: discord.Interaction):
+    #     print("button pressed")
+
+
+class NewGroupView(BaseView):
+    """ View for !gcreate command
+    NOTE: not yet implemented.. try with !view. Maybe we can reuse the group_modal
+    """
+
+    @discord.ui.button(label="Gruppe erstellen", style=discord.ButtonStyle.green)
+    async def new(self, inter, button) -> None:
+        group_form = GroupModal()
+        await inter.response.send_modal(group_form)
 
 
 
@@ -270,13 +383,6 @@ CHANNELS = "channels"
 CATEGORY = "category"
 OWNER = "owner"
 
-HOW_TO_JOIN = """
-Wo du beitreten möchtest, kopiere den Teil mit `!gjoin` und sendet diese Zeile dann in #bot-spam. 
-Der Bot sorgt automatisch für die Zuordnung :wink:
-
-Bei Schwierigkeiten, einfach fragen. Wir helfen, wo wir können!
-_ _
-"""
 
 ALLOWED_KEYS = [DATE, PLAYER_NUMBER, DESCRIPTION]
 

@@ -37,14 +37,30 @@ gcreate_time: "Time to play in GMT+1 (for example '24.02.24 14:00')"
 gcreate_maxplayers: "Maximum number of players"
 gcreate_channel_created: "Hey, <@{author}>! I created this channel for you and your group."
 gcreate_group_exists: "You already have a group called {name}..."
+gcreate_bad_args: >
+  Pass at least the name of the group (in double quotes) to the command: 
+  `!gcreate <group_name> [date=""]  [max_players=4] [description=""]`
+  or use the form by pressing the button below.
 gcreate_success: |
-  New group created: {group.name}.
+  ✅ New group created: **{group.name}**.
   Add channels: `!gaddchannel {group.slug} <channel_name>`. (GM only)
   Delete group: `!gdestroy {group.slug}` (GM only).
   Join as Players: `!gjoin {group.slug}`
 
 glist_help: "Lists all joinable groups."
 glist_desc: "'True' to show full groups, too"
+glist_header: |
+  These are all available groups.
+  You can join them via button or using the `!gjoin` command. 
+  If you have any difficulties, just ask. We will help where we can!
+  _ _
+
+group_info: |
+  **{group.name}**
+  {group.description}
+  **Gamemaster:** <@{group.owner}>
+  **Date:** {group.date}
+  **Player:** {group.player_count}/{group.max_players}
 
 gdestroy_help: "Destroys a group that you've created."
 group_deleted_info: "{author} deleted the group {name}. You are not a member anymore."

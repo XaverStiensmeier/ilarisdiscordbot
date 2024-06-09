@@ -14,9 +14,7 @@ from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
 from utility.sanitizer import sanitize
 
-from views.group import BaseModal, GroupModal
 import typing
-from views.group import GroupView, NewGroupView
 
 # TODO: not sure where this belongs:
 NO_UPDATE_COMMAND_LIST = ["glist"]
@@ -67,12 +65,9 @@ async def on_command_error(ctx, error):
             await ctx.send(msg["cmd_not_found"])
     elif (isinstance(error, commands.errors.MissingRequiredArgument) 
         or isinstance(error, commands.errors.BadArgument)):
-        view = None
-        if ctx.command.name == "gcreate":
-            view = NewGroupView(ctx.author)
         await ctx.send(msg["bad_args"].format(
             pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature
-        ), view=view)
+        ))
     elif isinstance(error, Exception):
         if ctx.command:
             info = f"{bot.command_prefix}{ctx.command.name}: {ctx.command.help}"
@@ -109,22 +104,6 @@ async def on_reaction_add(reaction, user):
         and user != bot.user):
         # Delete the message
         await reaction.message.delete()
-
-
-@bot.command()
-async def view(ctx: commands.Context):
-    """A command to test views"""
-    view = NewGroupView(ctx.author)
-    text = "Um eine neue Gruppe zu erstellen, sende den vollständigen Befehl, \
-        oder klicke auf den Button."
-    view.message = await ctx.send(text, view=view)
-
-
-@bot.command()
-async def modal_button(ctx: commands.Context):
-    """A command to test custom emoji buttons"""
-    view = GroupView(ctx.author)
-    view.message = await ctx.send("Custom Emoji Button", view=view)
 
 
 

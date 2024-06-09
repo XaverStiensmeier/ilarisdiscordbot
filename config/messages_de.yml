@@ -37,6 +37,10 @@ gcreate_time: "Spielzeit in GMT+1 (zum Beispiel '24.02.24 14:00')"
 gcreate_maxplayers: "Maximale Anzahl von Spielern"
 gcreate_channel_created: "Hey, <@{author}>! Ich habe diesen Kanal für dich und deine Gruppe erstellt."
 gcreate_group_exists: "Du hast bereits eine Gruppe namens {name}..."
+gcreate_bad_args: >
+  Schreibe den Befehl mit mindestens einem Namen in Anführungszeichen: 
+  `!gcreate <group_name> [date=""]  [max_players=4] [description=""]`
+  oder nutze das Formular über den Button:
 gcreate_success: |
   Neue Gruppe {group.name} angelegt.
   Zum Channel hinzufügen: `!gaddchannel {group.slug} new_channel`.  (nur SL)
@@ -45,6 +49,18 @@ gcreate_success: |
 
 glist_help: "Listet alle beitretbaren Gruppen auf."
 glist_desc: "'True', um auch volle Gruppen anzuzeigen"
+glist_header: |
+  Dies sind alle derzeit verfügbaren Gruppen. Du kannst ihnen über den Button oder
+  mit dem entsprechenden `!gjoin` Befehl beitreten.
+  Bei Schwierigkeiten, einfach fragen. Wir helfen, wo wir können!
+  _ _
+
+group_info: |
+  **{group.name}**
+  {group.description}
+  **Spielleitung:** <@{group.owner}>
+  **Datum:** {group.date}
+  **Spielende:** {group.player_count}/{group.max_players}
 
 gdestroy_help: "Löscht eine von dir erstellte Gruppe."
 group_deleted_info: "{author} hat die Gruppe {name} gelöscht. Du bist kein Mitglied mehr."
