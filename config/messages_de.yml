@@ -37,6 +37,11 @@ gcreate_time: "Spielzeit in GMT+1 (zum Beispiel '24.02.24 14:00')"
 gcreate_maxplayers: "Maximale Anzahl von Spielern"
 gcreate_channel_created: "Hey, <@{author}>! Ich habe diesen Kanal für dich und deine Gruppe erstellt."
 gcreate_group_exists: "Du hast bereits eine Gruppe namens {name}..."
+gcreate_success: |
+  Neue Gruppe {group.name} angelegt.
+  Zum Channel hinzufügen: `!gaddchannel {group.slug} new_channel`.  (nur SL)
+  Zum Gruppe entfernen: `!gdestroy {group.slug}` (nur SL)
+  Zum Beitreten: `!gjoin {group.slug}`
 
 glist_help: "Listet alle beitretbaren Gruppen auf."
 glist_desc: "'True', um auch volle Gruppen anzuzeigen"

@@ -14,12 +14,13 @@ import discord
 from filelock import FileLock
 from typing import Union, List
 from discord import abc  # discords base classes
-from discord import CategoryChannel, Interaction, Guild
+from discord import CategoryChannel, Interaction, Guild, Role, PermissionOverwrite
 from discord.ext.commands import Context
 from utility.sanitizer import sanitize
 from views.group import GroupView  # group buttons
 
 from config import DATA
+from config import messages as msg
 
 
 # module level functions and variables (cache).
@@ -133,6 +134,7 @@ class Group():
         self.description = description
         self.players = [get_id(p) for p in players]
         self.channels = []  # TODO remove?
+        self.role = None
 
     @classmethod
     def load(cls, guild_id, group_name, create=False):
@@ -157,14 +159,42 @@ class Group():
     def from_dict(cls, data):
         """Generates all objects from the id's in a dict and returns a group object."""
         return cls(**data)
-
-    def create_role(self):
-        """Creates a role for the group."""
-        raise NotImplementedError
     
-    def create_channels(self):
-        """Creates channels for the group."""
-        raise NotImplementedError
+    async def setup_role(self):
+        if not self.role:
+            role = await self.ctx.guild.create_role(name=self.name)
+            self.role = role.id
+        else:
+            role = self.ctx.guild.get_role(self.role)
+        if self.ctx:
+            await self.ctx.author.add_roles(role)
+        for p in self.players:
+            await self.ctx.guild.get_member(p).add_roles(role)
+    
+    async def setup_guild(self):
+        """Creates and assignes roles/channels permissions for this group."""
+        self.setup_role()
+        self.create_channels()
+    
+    async def create_channels(self, welcome=True):
+        """Creates channels for the group.
+        TODO: do we need to track the channels? Is tracking category not enough?
+        """
+        guild = self.ctx.guild
+        if not guild or not self.role:
+            raise ValueError("Guild and role are required to setup channels.")
+        permissions = {
+            guild.default_role: PermissionOverwrite(read_messages=False),
+            self.role: PermissionOverwrite(read_messages=True)}
+        category = await guild.create_category(name=self.slug)  # TODO: name or slug?
+        text = await guild.create_text_channel(name="Text", 
+            overwrites=permissions, category=category)
+        self.default_channel = text.id  # maybe set one channel as the one the bot uses?
+        await guild.create_voice_channel(
+            name="Voice", overwrites=permissions, category=category)
+        if welcome:
+            await text.send(msg["gcreate_channel_created"].format(
+                author=self.ctx.author.id))
 
     def __str__(self):
         """String representation of a group. str(group), print(group)..."""
@@ -386,15 +416,6 @@ def remove_self(guild, group, player):
             return False, f"Du bist kein Spieler der Gruppe {group}."
     else:
         return False, f"Gruppe {group} existiert nicht."
-
-
-@save_yaml
-def add_channel(guild, group, channel):
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_groups = guilds[guild]
-    # if guild_groups.get(group):
-    #     guild_groups[group][CHANNELS].append(channel)
 
 
 @save_yaml

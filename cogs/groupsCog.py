@@ -8,6 +8,7 @@ from discord.utils import get
 from config import messages as msg
 
 from cogs.group import organize_group as og
+from cogs.group.organize_group import Group
 from utility.sanitizer import sanitize
 from views.group import GroupView
 
@@ -20,8 +21,9 @@ class GroupCommands(commands.Cog):
         self.bot = bot
 
     @commands.command(help=msg["gcreate_help"], aliases=['gneu'])
-    async def gcreate(self, ctx, 
-        group: str = commands.parameter(description=msg["gcreate_group"]),
+    async def gcreate(self, 
+        ctx: commands.Context, 
+        name: str = commands.parameter(description=msg["gcreate_group"]),
         time: str = commands.parameter(
             default="",
             description=msg["gcreate_time"]),
@@ -34,47 +36,19 @@ class GroupCommands(commands.Cog):
             description=msg["gcreate_desc"]
         )
     ):
-        # group = Group()
-        group_name = sanitize(group)
-        sanitized_guild = sanitize(ctx.guild.name)
-        everyone = ctx.guild.default_role
-
-        if og.group_exists(sanitized_guild, group_name):
-            await ctx.reply(msg["gcreate_group_exists"].format(name=group_name))
+        group = Group(
+            name=name,  # slug generated from name
+            time=time,
+            max_players=maximum_players,
+            description=description,
+            ctx=ctx,  # sets owner and guild id
+        )
+        if group.exists:
+            await ctx.reply(msg["gcreate_group_exists"].format(name=name), ephemeral=True)
             return
-        # TODO: creating roles categories, channels etc, should not be part of
-        # organize_group not the command, to reuse it in other commands/modals.
-        # create role
-        role = await ctx.guild.create_role(name=group_name)
-        logging.debug(f"Created role {role}.")
-        # add role to GM
-        await ctx.author.add_roles(role)
-        logging.debug(f"Added role {role} to user {ctx.author}.")
-        # permissions
-        overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
-                        role: discord.PermissionOverwrite(read_messages=True)}
-        logging.debug(f"Permission for role {role} set.")
-        # create category
-        category = await ctx.guild.create_category(name=group_name)
-        logging.debug(f"Created category {category}")
-        sanitized_guild = ctx.guild.id  # TODO: current overwrite to test id based keys 
-        result_str = og.create_group(sanitized_guild, group_name, ctx.author.id, 
-            category.id, time, maximum_players, description)
-        
-        # create channels
-        text_channel = await ctx.guild.create_text_channel(name="Text", 
-            overwrites=overwrites, category=category)
-        og.add_channel(sanitized_guild, group_name, text_channel.id)
-        logging.debug(f"Created text channel {text_channel}")
-
-        voice_channel = await ctx.guild.create_voice_channel(
-            name="Voice", overwrites=overwrites, category=category)
-        og.add_channel(sanitized_guild, group_name, voice_channel.id)
-        logging.debug(f"Created voice channel {voice_channel}")
-        logging.debug("Added group.")
-        await text_channel.send(msg["gcreate_channel_created"].format(
-            author=ctx.author.id))
-        await ctx.reply(result_str)
+        group.save()  # writes to yaml
+        group.setup_guild()  # create role, category and channels
+        ctx.reply(msg["gcreate_success"].format(group=group), ephemeral=True)
 
     @commands.command(help=msg["glist_help"], aliases=['gliste'])
     async def glist(self, ctx, full: bool = commands.parameter(
