@@ -15,7 +15,7 @@ from filelock import FileLock
 from typing import Union, List
 from discord import abc  # discords base classes
 from discord import (CategoryChannel, Interaction, Guild, Role, PermissionOverwrite,
-    Interaction, ButtonStyle, User, Member, Client)
+    Interaction, ButtonStyle, User, Member, Client, TextChannel)
 from discord.ui import TextInput, button
 from discord.ext.commands import Context
 
@@ -80,12 +80,13 @@ class Group():
     to avoid unnecessary calls to discord API. The methods that require such calls
     are usually async (i.e. setup_roles, create_channels).
     """
-    
+    guilds = guilds
+
     def __init__(self, name: str=None, slug: str=None, ctx: Context=None, 
         inter: Interaction=None, guild: Union[Guild, int]=None,
         owner: Union[abc.User, int]=None, category: Union[CategoryChannel, int]=None,
         date: str="", max_players: int=4, description: str="", players: List[int]=[],
-        bot: discord.Client=None,
+        bot: discord.Client=None, channel: Union[TextChannel, int]=None,
         channels: List[int]=[]  # maybe remove?
         ) -> None:
         """Creates a new group object.
@@ -119,6 +120,7 @@ class Group():
         if bot:
             self.bot = bot
         self.category = get_id(category)
+        self.channel = channel
         self.date = date
         self.max_players = max_players
         self.description = description
@@ -230,23 +232,28 @@ class Group():
         guilds[get_id(self.guild)][self.slug] = self.as_dict()
     
     @save_yaml
-    def remove_player(self, player: Union[abc.User, int]):
+    def remove_player(self, player: Union[abc.User, int], check_owner=True):
         """Removes a player from the group."""
         player_id = get_id(player)
+        if check_owner and not self.is_owner(player_id):
+            return False, msg["not_owner"]
         if player_id in self.players:
             self.players.remove(player_id)
-            # return True, f"Spieler <@{player_id}> wurde entfernt."
-        # return False, f"Spieler <@{player_id}> ist nicht in Gruppe {self.name}."
+            return True, f"Spieler <@{player_id}> wurde entfernt."
+        return False, f"Spieler <@{player_id}> ist nicht in Gruppe {self.name}."
     
     @save_yaml
-    def group_destroy(self, user: Union[abc.User, int]):
+    def destroy(self, user: Union[abc.User, int]):
         """Destroys the group
         @return: tuple(bool, str) status, message
         """
         if not self.is_owner(user):
             return False, msg["not_owner"]
+        if not self.exists:
+            return False, msg["group_not_found"]
         guild = get_id(self.guild)
         group_data = guilds.get(guild, {}).pop(self.slug)
+        # TODO: clean up channels and roles?
         return True, msg["group_destroyed"]
 
     def is_owner(self, user: Union[abc.User, int]):
@@ -280,7 +287,7 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
     """
     name = TextInput(label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80)
     text = TextInput(label=msg["text_la"], placeholder=msg["text_ph"], required=False, max_length=1400, min_length=0, style=discord.TextStyle.long)
-    slots = TextInput(label=msg["slots_la"], placeholder=msg["slots_ph"], required=False, min_length=0, max_length=1, default=4)
+    max_players = TextInput(label=msg["slots_la"], placeholder=msg["slots_ph"], required=False, min_length=0, max_length=1, default=4)
     date = TextInput(label=msg["date_la"], placeholder=msg["date_ph"], required=False, min_length=0, max_length=150)
 
     def __init__(self, name=None):
@@ -292,7 +299,7 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
         group = Group(  # create object from form input
             name=self.name.value,
             description=self.text.value,
-            max_players=int(self.slots.value),
+            max_players=int(self.max_players.value),
             date=self.date.value,
             inter=inter,
             bot=self.bot
@@ -339,17 +346,6 @@ class GroupView(BaseView):
         print(inter.name)
         # await inter.response.edit_message("Noch nicht implementiert", view=self)
 
-    @button(label=msg["btn_destroy"], emoji="🗑️", style=ButtonStyle.red)
-    async def destroy(self, inter, button) -> None:
-        """ destroy a group from button click
-        TODO: check permissions, maybe confirm dialog?
-        """
-        guild = sanitize(inter.guild.name)
-        if not og.is_owner(guild, self.group, inter.user.id):
-            await inter.response.send_message(msg["not_owner"], ephemeral=True)
-            return
-        status, answer = og.destroy_group(guild, self.group, inter.user.id)[:2]
-        await inter.response.send_message(answer, ephemeral=True)
 
 
 class NewGroupView(BaseView):
@@ -363,6 +359,31 @@ class NewGroupView(BaseView):
         group_form.bot = self.bot
         await inter.response.send_modal(group_form)
 
+class GroupAdminView(BaseView):
+    """Buttons for group admin commands like edit, delete, announce, etc.
+    """
+
+    @discord.ui.button(label=msg["btn_edit"], style=discord.ButtonStyle.blurple)
+    async def edit(self, inter, button) -> None:
+        group_form = GroupModal()
+        group_form.name = self.name
+        group_form.text = self.text
+        group_form.max_players = self.max_players
+        group_form.date = self.date
+        group_form.edit = True
+        await inter.response.send_modal(group_form)
+
+    @button(label=msg["btn_destroy"], emoji="🗑️", style=ButtonStyle.red)
+    async def destroy(self, inter, button) -> None:
+        """ destroy a group from button click
+        TODO: check permissions, maybe confirm dialog?
+        """
+        guild = sanitize(inter.guild.name)
+        if not og.is_owner(guild, self.group, inter.user.id):
+            await inter.response.send_message(msg["not_owner"], ephemeral=True)
+            return
+        status, answer = og.destroy_group(guild, self.group, inter.user.id)[:2]
+        await inter.response.send_message(answer, ephemeral=True)
 
 
 # TODO: move to config.constants or config.messages
@@ -416,6 +437,7 @@ def get_main_channel(guild, group):
 
 @save_yaml
 def remove_player(guild, group, player):
+    logging.warning("DEPRECATED! use Group.remove_player instead.")
     if not guilds.get(guild):
         guilds[guild] = {}
     guild_guilds = guilds[guild]

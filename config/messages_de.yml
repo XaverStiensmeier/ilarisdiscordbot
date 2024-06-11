@@ -75,6 +75,12 @@ group_info: |
   **Datum:** {group.date}
   **Spielende:** {group.player_count}/{group.max_players}
 
+gedit_help: "Bearbeitet eine Gruppe."
+gedit_group_param: "Name der Gruppe, die bearbeitet werden soll."
+gedit_key_param: "Feld das überschrieben werden soll: 'name', 'date', 'max_players', 'description'"
+gedit_val_param: "Neuer Wert für das Feld"
+
+
 gdestroy_help: "Löscht eine von dir erstellte Gruppe."
 group_deleted_info: "{author} hat die Gruppe {name} gelöscht. Du bist kein Mitglied mehr."
 

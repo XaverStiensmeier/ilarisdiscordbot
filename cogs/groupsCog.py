@@ -109,6 +109,22 @@ class GroupCommands(Cog):
             await member.send(msg["group_deleted_info"].format(author=ctx.author, name=group_name))
         await ctx.reply(result_str)
 
+    @command(help=msg["gedit_help"], aliases=['gbearbeiten'])
+    async def gedit(self, ctx,
+        group: str=parameter(description=msg["group_param"]),
+        key: str=parameter(description=msg["key_param"]),
+        value: str=parameter(description=msg["value_param"]),
+    ):
+        try:
+            group = Group.load(ctx.guild.id, group)
+        except ValueError as e:
+            await ctx.reply(str(e))
+            return
+        if not group.is_owner(ctx.author.id):  # TODO: or admin
+            await ctx.reply(msg["not_owner"])
+            return
+
+
     @command(help=msg["gdestroy_help"], aliases=['gentfernen'])
     async def gdestroy(
         self, ctx, 
