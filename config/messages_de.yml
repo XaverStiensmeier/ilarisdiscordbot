@@ -46,6 +46,19 @@ gcreate_success: |
   Zum Channel hinzufügen: `!gaddchannel {group.slug} new_channel`.  (nur SL)
   Zum Gruppe entfernen: `!gdestroy {group.slug}` (nur SL)
   Zum Beitreten: `!gjoin {group.slug}`
+submit_success: ":white_check_mark: Gruppe erstellt!"
+name_ph: Name der Gruppe
+name_la: Name
+date_ph: Datum oder Uhrzeit
+date_la: Datum
+slots_la: Spieleranzahl
+slots_ph: Maximale Anzahl an SpielerInnen
+text_la: Beschreibung
+text_ph: Beschreibung der Gruppe
+
+btn_join: Beitreten
+btn_edit: Bearbeiten
+btn_destroy: Löschen
 
 glist_help: "Listet alle beitretbaren Gruppen auf."
 glist_desc: "'True', um auch volle Gruppen anzuzeigen"
@@ -110,3 +123,4 @@ card_not_found: "Keine solche Regelkarte..."
 join_own_group: "Du kannst deiner eigenen Gruppe nicht beitreten."
 not_found: "{name} nicht gefunden..."
 not_owner: "Sorry, das darf nur die Spielleitung."
+no_group_set: "Es konnte keine Gruppe zugeordnet werden."

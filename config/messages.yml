@@ -6,7 +6,7 @@ creatures_help: "Gets link to KreaturenDB"
 creatures_desc: "Name of creature"
 creatures_url: "https://ilaris-online.de/app/kreaturen/{params}"
 
-ilaris_help: "Posts an image of the given page if argument is numeric. Else the database entry."
+ilaris_help: "Posts an image of the given page if the argument is numeric. Else the database entry."
 ilaris_desc: "Number or database entry (for example 4 or 'Duplicatus')"
 
 card_help: "Posts an image of a specified rule card."
@@ -46,6 +46,19 @@ gcreate_success: |
   Add channels: `!gaddchannel {group.slug} <channel_name>`. (GM only)
   Delete group: `!gdestroy {group.slug}` (GM only).
   Join as Players: `!gjoin {group.slug}`
+submit_success: ":white_check_mark: Group created!"
+name_ph: Group name
+name_la: Name
+date_ph: Date or time
+date_la: Date
+slots_la: Number of players
+slots_ph: Maximum number of players
+text_la: Description
+text_ph: Group description
+
+btn_join: Join
+btn_edit: Edit
+btn_destroy: Delete
 
 glist_help: "Lists all joinable groups."
 glist_desc: "'True' to show full groups, too"
@@ -69,13 +82,13 @@ gpurge_help: "Purges a group."
 gpurge_group: "Group (full name)"
 
 gset_help: "Sets a group key."
-gset_key: "Key to set. For example: {date},{description} or {players}"
+gset_key: "Key to set. For example: {date}, {description}, or {players}"
 gset_value: "Value to set the key to"
 
 gsetdate_help: "Sets date."
 gsetdate_value: "New date"
 
-gsetnumberofplayers_help: "Sets maximum_players number."
+gsetnumberofplayers_help: "Sets the maximum number of players."
 gsetnumberofplayers_value: "New number of players"
 
 gsetdescription_help: "Sets description."
@@ -109,4 +122,5 @@ card_wrong_type: "Rule card has wrong file ending... Abort."
 card_not_found: "No such rule card..."
 join_own_group: "You can't join your own group."
 not_found: "{name} not found..."
-not_owner: "Sorry, thats only allowed for the owner of the group."
+not_owner: "Sorry, that's only allowed for the owner of the group."
+no_group_set: "No group could be assigned."
