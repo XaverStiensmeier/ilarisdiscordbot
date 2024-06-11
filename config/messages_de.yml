@@ -81,10 +81,6 @@ group_deleted_info: "{author} hat die Gruppe {name} gelöscht. Du bist kein Mitg
 gpurge_help: "Löscht eine Gruppe vollständig."
 gpurge_group: "Gruppe (voller Name)"
 
-gset_help: "Setzt einen Gruppenschlüssel."
-gset_key: "Zu setzender Schlüssel. Zum Beispiel: {date},{description} oder {players}"
-gset_value: "Wert, auf den der Schlüssel gesetzt werden soll"
-
 gsetdate_help: "Setzt das Datum."
 gsetdate_value: "Neues Datum"
 

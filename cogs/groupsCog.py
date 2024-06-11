@@ -132,24 +132,6 @@ class GroupCommands(Cog):
     ):
         await self.delete_group(ctx, group_name)
 
-    @command(help=msg["gset_help"], aliases=['gsetze'])
-    async def gset(
-        self, ctx, 
-        group_prefix: str = parameter(
-            description=msg["group_prefix"]
-        ),
-        key: str = parameter(
-            description=msg["gset_key"].format(
-                date=og.DATE,
-                players=og.PLAYER_NUMBER,
-                description=og.DESCRIPTION
-        )),
-        value: str = parameter(
-            description=msg["gset_value"])):
-        group = sanitize(group_prefix)
-        result_str = og.set_key(sanitize(ctx.guild.name), group, key, value)
-        await ctx.reply(result_str)
-
     @command(
         help=msg["gsetdate_help"],
         aliases=['gsetzedatum'])

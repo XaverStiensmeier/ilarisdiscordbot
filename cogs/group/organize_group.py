@@ -270,7 +270,7 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
     TODO: distinguish between create and edit mode, maybe track old group name (key)
     """
     name = TextInput(label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80)
-    text = TextInput(label=["text_la"], placeholder=msg["text_ph"], max_length=1400, min_length=0, style=discord.TextStyle.long)
+    text = TextInput(label=msg["text_la"], placeholder=msg["text_ph"], max_length=1400, min_length=0, style=discord.TextStyle.long)
     slots = TextInput(label=msg["slots_la"], placeholder=msg["slots_ph"], min_length=0, max_length=1, default=4)
     date = TextInput(label=msg["date_la"], placeholder=msg["date_ph"], min_length=0, max_length=150)
 
@@ -319,7 +319,7 @@ class GroupView(BaseView):
     
 
     # adding a component using it's decorator (fancy shit)
-    @button(label=msg["edit"], emoji="✏️", style=ButtonStyle.blurple)
+    @button(label=msg["btn_edit"], emoji="✏️", style=ButtonStyle.blurple)
     async def edit(self, inter, button) -> None:
         """ open modal to edit group on button click
         TODO: not fully implemented yet, modal is just an example (not saving)
@@ -382,6 +382,7 @@ def group_exists(guild, group):
 
 @save_yaml
 def destroy_group(guild, group, author=None):
+    logging.warning("DEPRECATED! use Group.destroy() instead.")
     group_data = guilds.get(guild, {}).get(group)
     if group_data is None:
         return False, "Die Gruppe existiert nicht.", [], [], []
@@ -392,6 +393,7 @@ def destroy_group(guild, group, author=None):
 
 
 def get_main_channel(guild, group):
+    logging.warning("DEPRECATED! use Group.default_channel instead.")
     if not guilds.get(guild):
         guilds[guild] = {}
     guild_groups = guilds[guild]
@@ -399,20 +401,6 @@ def get_main_channel(guild, group):
         return guild_groups[group].get(CHANNELS, [None])[0]
     return None
 
-
-@save_yaml
-def set_key(guild, group, key, value):
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_groups = guilds[guild]
-    if guild_groups.get(group):
-        if key in ALLOWED_KEYS:
-            guild_groups[group][key] = value
-            return f"{key}: '{value}' wurde gesetzt"
-        else:
-            return f"{key} konnte nicht gesetzt werden."
-    else:
-        return f"Gruppe {group} existiert nicht."
 
 
 @save_yaml

@@ -81,10 +81,6 @@ group_deleted_info: "{author} deleted the group {name}. You are not a member any
 gpurge_help: "Purges a group."
 gpurge_group: "Group (full name)"
 
-gset_help: "Sets a group key."
-gset_key: "Key to set. For example: {date}, {description}, or {players}"
-gset_value: "Value to set the key to"
-
 gsetdate_help: "Sets date."
 gsetdate_value: "New date"
 
