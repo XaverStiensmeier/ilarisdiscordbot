@@ -52,6 +52,7 @@ class GroupCommands(Cog):
             max_players=maximum_players,
             description=description,
             ctx=ctx,  # sets owner and guild id
+            bot=self.bot,
         )
         if group.exists:
             await ctx.reply(msg["gcreate_group_exists"].format(name=name), ephemeral=True)
@@ -65,6 +66,7 @@ class GroupCommands(Cog):
         if (isinstance(error, commands.errors.MissingRequiredArgument) 
         or isinstance(error, commands.errors.BadArgument)):
             view = NewGroupView(ctx.author)
+            view.bot = self.bot
             await ctx.send(msg["gcreate_bad_args"].format(
                 pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature
             ), view=view)

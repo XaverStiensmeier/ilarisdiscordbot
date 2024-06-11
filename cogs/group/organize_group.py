@@ -15,7 +15,7 @@ from filelock import FileLock
 from typing import Union, List
 from discord import abc  # discords base classes
 from discord import (CategoryChannel, Interaction, Guild, Role, PermissionOverwrite,
-    Interaction, ButtonStyle)
+    Interaction, ButtonStyle, User, Member, Client)
 from discord.ui import TextInput, button
 from discord.ext.commands import Context
 
@@ -85,6 +85,7 @@ class Group():
         inter: Interaction=None, guild: Union[Guild, int]=None,
         owner: Union[abc.User, int]=None, category: Union[CategoryChannel, int]=None,
         date: str="", max_players: int=4, description: str="", players: List[int]=[],
+        bot: discord.Client=None,
         channels: List[int]=[]  # maybe remove?
         ) -> None:
         """Creates a new group object.
@@ -100,10 +101,13 @@ class Group():
         """
         self.name = name
         self.slug = sanitize(name) if name else None
+        self.ctx = None
+        self.inter = None
         if ctx:
             self.ctx = ctx
             self.guild = ctx.guild.id
             self.owner = ctx.author.id
+            self.bot = ctx.bot
         elif inter: 
             self.inter = inter
             self.guild = inter.guild.id
@@ -112,6 +116,8 @@ class Group():
             self.owner = get_id(owner)
         if guild:
             self.guild = get_id(guild)
+        if bot:
+            self.bot = bot
         self.category = get_id(category)
         self.date = date
         self.max_players = max_players
@@ -145,21 +151,24 @@ class Group():
         return cls(**data)
     
     async def setup_role(self):
+        guild = self.bot.get_guild(self.guild)
         if not self.role:
-            role = await self.ctx.guild.create_role(name=self.name)
+            role = await guild.create_role(name=self.name)
             self.role = role.id
         else:
             role = self.ctx.guild.get_role(self.role)
         if self.ctx:
             await self.ctx.author.add_roles(role)
+        elif self.inter:
+            await self.inter.user.add_roles(role)
         for p in self.players:
-            await self.ctx.guild.get_member(p).add_roles(role)
+            await guild.get_member(p).add_roles(role)
     
     async def create_channels(self, welcome=True):
         """Creates channels for the group.
         TODO: do we need to track the channels? Is tracking category not enough?
         """
-        guild = self.ctx.guild  # TODO: better fetch from self.guild here?
+        guild = self.bot.get_guild(self.guild)  # get guild object from id
         if not guild or not self.role:
             raise ValueError("Guild and role are required to setup channels.")
         permissions = {
@@ -270,9 +279,9 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
     TODO: distinguish between create and edit mode, maybe track old group name (key)
     """
     name = TextInput(label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80)
-    text = TextInput(label=msg["text_la"], placeholder=msg["text_ph"], max_length=1400, min_length=0, style=discord.TextStyle.long)
-    slots = TextInput(label=msg["slots_la"], placeholder=msg["slots_ph"], min_length=0, max_length=1, default=4)
-    date = TextInput(label=msg["date_la"], placeholder=msg["date_ph"], min_length=0, max_length=150)
+    text = TextInput(label=msg["text_la"], placeholder=msg["text_ph"], required=False, max_length=1400, min_length=0, style=discord.TextStyle.long)
+    slots = TextInput(label=msg["slots_la"], placeholder=msg["slots_ph"], required=False, min_length=0, max_length=1, default=4)
+    date = TextInput(label=msg["date_la"], placeholder=msg["date_ph"], required=False, min_length=0, max_length=150)
 
     def __init__(self, name=None):
         self.group = name
@@ -286,9 +295,10 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
             max_players=int(self.slots.value),
             date=self.date.value,
             inter=inter,
+            bot=self.bot
         )
         group.save()  # write to yaml
-        group.setup_guild(inter.guild)  # channels and roles etc..
+        await group.setup_guild()  # channels and roles etc..
         await inter.response.send_message(msg["submit_success"], ephemeral=True)
 
 
@@ -350,6 +360,7 @@ class NewGroupView(BaseView):
     @discord.ui.button(label="Gruppe erstellen", style=discord.ButtonStyle.green)
     async def new(self, inter, button) -> None:
         group_form = GroupModal()
+        group_form.bot = self.bot
         await inter.response.send_modal(group_form)
 
 
