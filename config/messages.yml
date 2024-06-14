@@ -79,8 +79,12 @@ gedit_help: "Bearbeitet eine Gruppe."
 gedit_group_param: "Name der Gruppe, die bearbeitet werden soll."
 gedit_key_param: "Feld das überschrieben werden soll: 'name', 'date', 'max_players', 'description'"
 gedit_val_param: "Neuer Wert für das Feld"
+gedit_key_error: "Ungültiges Feld. Gültige Felder sind: 'name', 'date', 'max_players', 'description'"
+
 gdestroy_help: "Destroys a group that you've created."
-group_deleted_info: "{author} deleted the group {name}. You are not a member anymore."
+gdestroy_name_param: "Name of the group you want to destroy."
+gdestroy_info: "Group {group.name} has been destroyed."
+group_deleted_info: "{author.name} deleted the group {group.name}. You are not a member anymore."
 
 gpurge_help: "Purges a group."
 gpurge_group: "Group (full name)"

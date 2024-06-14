@@ -11,6 +11,7 @@ import os
 import logging
 import yaml
 import discord
+import asyncio
 from filelock import FileLock
 from typing import Union, List
 from discord import abc  # discords base classes
@@ -26,6 +27,7 @@ from views.base import BaseModal, BaseView
 from cogs.group import organize_group as og
 from utility.sanitizer import sanitize
 from config import messages as msg
+from functools import wraps
 
 # module level functions and variables (cache).
 
@@ -33,15 +35,29 @@ from config import messages as msg
 # file, so I renamed it to guilds.yml.
 data_file = DATA/"guilds.yml"
 
+def write_yaml():
+    with open(data_file, "w+") as file:
+        with FileLock("groups.yml.lock"):
+            yaml.safe_dump(guilds, file)
+
 def save_yaml(original_function):
-    def wrapper(guild, *args, **kwargs):
-        result = original_function(guild, *args, **kwargs)
-        with open(data_file, "w+") as file:
-            logging.debug(f"Saving triggered by {guild}...")
-            with FileLock("groups.yml.lock"):
-                yaml.safe_dump(guilds, file)
+
+    @wraps(original_function)
+    def wrapper(*args, **kwargs):
+        result = original_function(*args, **kwargs)
+        write_yaml()
         return result
-    return wrapper
+
+    @wraps(original_function)
+    async def async_wrapper(*args, **kwargs):
+        result = await original_function(*args, **kwargs)
+        write_yaml()
+        return result
+    if asyncio.iscoroutinefunction(original_function):
+        return async_wrapper
+    else:
+        return wrapper
+
 
 
 @save_yaml
@@ -79,6 +95,7 @@ class Group():
     easy to use in different scenarios. Methods use ids of discord objects when possible
     to avoid unnecessary calls to discord API. The methods that require such calls
     are usually async (i.e. setup_roles, create_channels).
+    # TODO: create, load, save, remove a dummy group as test case.
     """
     guilds = guilds
 
@@ -87,7 +104,7 @@ class Group():
         owner: Union[abc.User, int]=None, category: Union[CategoryChannel, int]=None,
         date: str="", max_players: int=4, description: str="", players: List[int]=[],
         bot: discord.Client=None, channel: Union[TextChannel, int]=None,
-        channels: List[int]=[]  # maybe remove?
+        role: int=None,
         ) -> None:
         """Creates a new group object.
         The init function is a bit massive, but this allows to use it very flexible,
@@ -126,32 +143,34 @@ class Group():
         self.description = description
         self.players = [get_id(p) for p in players]
         self.channels = []  # TODO remove?
-        self.role = None
+        self.role = role
 
     @classmethod
-    def load(cls, guild_id, group_name, create=False):
+    def load(cls, name, ctx=None, inter=None, guild_id=None, create=False):
         """Loads a group object from the guilds dict.
         TODO: maybe allow passing context, to get guild_id?
         @param create: if True, a new (unsaved) group object is created for missing data
+        @param ctx: set user, guild and bot from context
+        @param inter: set user, guild and bot from interaction
+        @param guild_id: guild id, required if ctx or inter is not set
         """
-        group_slug = sanitize(group_name)
-        data = guilds.get(guild_id, {}).get(group_slug)
-        if not data and not create:
-            raise ValueError(f"Group {group_name} not found in guild {guild_id}.")
-        return cls.from_dict(guilds.get(guild_id, {}).get(group_slug))
+        if not guild_id:
+            guild_id = ctx.guild.id if ctx else inter.guild.id
+        slug = sanitize(name)
+        data = guilds.get(guild_id, {}).get(slug)
+        if not data:
+            if create:
+                return cls(name=name, ctx=ctx, inter=inter, guild=guild_id)
+            raise ValueError(f"Group {name} not found in guild {guild_id}.")
+        return cls(**data, ctx=ctx, inter=inter)
 
     @classmethod
     def groups_from_guild(cls, guild_id: int):
         """Returns all groups from a guild."""
         groups_data = guilds.get(guild_id, {})
-        groups = [Group.from_dict(data) for data in groups_data.values()]
+        groups = [Group(**data) for data in groups_data.values()]
         return groups
 
-    @classmethod
-    def from_dict(cls, data):
-        """Generates all objects from the id's in a dict and returns a group object."""
-        return cls(**data)
-    
     async def setup_role(self):
         guild = self.bot.get_guild(self.guild)
         if not self.role:
@@ -168,7 +187,6 @@ class Group():
     
     async def create_channels(self, welcome=True):
         """Creates channels for the group.
-        TODO: do we need to track the channels? Is tracking category not enough?
         """
         guild = self.bot.get_guild(self.guild)  # get guild object from id
         if not guild or not self.role:
@@ -176,7 +194,9 @@ class Group():
         permissions = {
             guild.default_role: PermissionOverwrite(read_messages=False),
             guild.get_role(self.role): PermissionOverwrite(read_messages=True)}
-        category = await guild.create_category(name=self.slug)  # TODO: name or slug?
+        category = await guild.create_category(name=self.name)  # TODO: name or slug?
+        logging.error("Created category: %s", category.id)
+        self.category = category.id  # save category id
         text = await guild.create_text_channel(name="Text", 
             overwrites=permissions, category=category)
         self.default_channel = text.id  # maybe set one channel as the one the bot uses?
@@ -215,12 +235,13 @@ class Group():
             "name": self.name,
             "slug": self.slug,
             "owner": self.owner,
+            "guild": self.guild,
             "category": self.category,
             "date": self.date, 
+            "role": self.role,
             "max_players": self.max_players,
             "description": self.description,
             "players": self.players,
-            "channels": []  # TODO remove?
         }
     
     @save_yaml
@@ -242,23 +263,56 @@ class Group():
             return True, f"Spieler <@{player_id}> wurde entfernt."
         return False, f"Spieler <@{player_id}> ist nicht in Gruppe {self.name}."
     
+    async def remove_channels(self):
+        """Removes all channels of the group.
+        NOTE: as this function is used to be called from destroy, it is not wrapped
+        by save_yaml. If you call it directly you can follow it by group.save().
+        """
+        guild = self.bot.get_guild(self.guild)
+        category = guild.get_channel(self.category)
+        if not category:
+            logging.error(f"Category {self.category} not found in {guilds[self.guild]}")
+            return
+        for channel in category.channels:
+            if channel:
+                await channel.delete()
+                logging.error(f"Deleted channel {channel.name}.")
+        await category.delete()
+        logging.error(f"Deleted category {category}.")
+            
     @save_yaml
-    def destroy(self, user: Union[abc.User, int]):
-        """Destroys the group
+    async def destroy(self, user: Union[abc.User, int], cleanup=True, notify=True):
+        """Removes the group and all its data from database.
+        @param user: user object or id of the user who wants to destroy the group
+        @param cleanup: if True, channels and roles are removed as well
+        @param notify: send message to all players, that their group is deleted
         @return: tuple(bool, str) status, message
         """
-        if not self.is_owner(user):
+        if not self.is_owner(user):  # TODO: or admin
             return False, msg["not_owner"]
         if not self.exists:
             return False, msg["group_not_found"]
         guild = get_id(self.guild)
         group_data = guilds.get(guild, {}).pop(self.slug)
-        # TODO: clean up channels and roles?
-        return True, msg["group_destroyed"]
+        if cleanup:
+            # remove role
+            guild = self.bot.get_guild(self.guild)
+            role = guild.get_role(self.role)
+            # or discord.utils.get(self.guild.roles, name=self.name)
+            if role:
+                await role.delete()
+                logging.debug(f"Deleted role {role}.")
+            # remove channels (category)
+            await self.remove_channels()
+        if notify:
+            for player_id in self.players:
+                member = guild.get_member(player_id)
+                await member.send(msg["group_deleted_info"].format(author=user, group=self))
+        return True, msg["gdestroy_info"].format(group=self)
 
     def is_owner(self, user: Union[abc.User, int]):
         return get_id(self.owner) == get_id(user)
-
+    
     @property
     def player_count(self):
         return len(self.players)
@@ -284,6 +338,7 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
     input will be accessible from the instance as self.<field_name>.value.
     TODO: allow to pass a group and prefill the fields for edit.
     TODO: distinguish between create and edit mode, maybe track old group name (key)
+    TODO: create a modal as test case
     """
     name = TextInput(label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80)
     text = TextInput(label=msg["text_la"], placeholder=msg["text_ph"], required=False, max_length=1400, min_length=0, style=discord.TextStyle.long)

@@ -57,8 +57,8 @@ class GroupCommands(Cog):
         if group.exists:
             await ctx.reply(msg["gcreate_group_exists"].format(name=name), ephemeral=True)
             return
-        group.save()  # writes to yaml
         await group.setup_guild()  # create role, category and channels
+        group.save()  # writes to yaml
         await ctx.reply(msg["gcreate_success"].format(group=group), ephemeral=True)
 
     @gcreate.error
@@ -80,40 +80,11 @@ class GroupCommands(Cog):
         for group in Group.groups_from_guild(ctx.guild.id):
             group.message = await ctx.reply(group.info_message, view=group.info_view(ctx.author))
 
-    async def delete_group(self, ctx, group_name):
-        sanitized_guild = sanitize(ctx.guild.name)
-        status, result_str, players, channels, category = og.destroy_group(sanitized_guild, group_name)
-        # if status, delete channels and role
-        if status:
-            # remove role
-            role = discord.utils.get(ctx.guild.roles, name=group_name)
-            if role:
-                await role.delete()
-                logging.debug(f"Deleted role {role}.")
-
-            # remove channels
-            for channel_id in channels:
-                tmp_channel = ctx.guild.get_channel(channel_id)
-                if tmp_channel:
-                    await tmp_channel.delete()
-                    og.remove_channel(sanitized_guild, group_name, tmp_channel.id)
-                    logging.debug(f"Deleted channel {tmp_channel.name}.")
-
-            # remove category
-            tmp_category = ctx.guild.get_channel(category)
-            if tmp_category:
-                await tmp_category.delete()
-                logging.debug(f"Deleted category {tmp_category}.")
-        for player_id in players:
-            member = ctx.guild.get_member(player_id)
-            await member.send(msg["group_deleted_info"].format(author=ctx.author, name=group_name))
-        await ctx.reply(result_str)
-
     @command(help=msg["gedit_help"], aliases=['gbearbeiten'])
     async def gedit(self, ctx,
-        group: str=parameter(description=msg["group_param"]),
-        key: str=parameter(description=msg["key_param"]),
-        value: str=parameter(description=msg["value_param"]),
+        group: str=parameter(description=msg["gedit_group_param"]),
+        key: str=parameter(description=msg["gedit_key_param"]),
+        value: str=parameter(description=msg["gedit_val_param"]),
     ):
         try:
             group = Group.load(ctx.guild.id, group)
@@ -123,24 +94,32 @@ class GroupCommands(Cog):
         if not group.is_owner(ctx.author.id):  # TODO: or admin
             await ctx.reply(msg["not_owner"])
             return
-
+        if not key in ["name", "date", "description", "max_players"]:
+            await ctx.reply(msg["gedit_key_error"])
+            return
+        if key == "max_players":
+            value = int(value)
+        setattr(group, key, value)
 
     @command(help=msg["gdestroy_help"], aliases=['gentfernen'])
     async def gdestroy(
         self, ctx, 
-        group_prefix: str = parameter(
-            description=msg["group_prefix"]
-        )
+        name: str = parameter(description=msg["gdestroy_name_param"])
     ):
-        sanitized_guild = sanitize(ctx.guild.name)
-        group_name = sanitize(group_prefix)
-        await self.delete_group(ctx, group_name)
+        try:
+            group = Group.load(name, ctx=ctx)
+            group.guild = ctx.guild.id  # only to support older data w/o guild ids
+        except ValueError as e:
+            await ctx.reply(msg["not_found"].format(name=name))
+            await ctx.reply(str(e))
+            return
+        status, answer = await group.destroy(ctx.author)
+        await ctx.reply(answer)
 
     @command(
         help=msg["gpurge_help"],
         aliases=['gbereinigen'],
         hidden=True)
-
     @commands.has_permissions(administrator=True)
     async def gpurge(
         self, ctx, 
@@ -303,3 +282,17 @@ class GroupCommands(Cog):
             og.add_channel(sanitized_guild, group_name, text_channel.id)
             logging.debug(f"Created text channel {text_channel}")
             await ctx.reply(msg["gaddchannel_created_text"])
+
+    # TODO: remove and/or make this admin commands only (maybe confirm dialog)
+    @command()
+    async def removeallchannels(self, ctx):
+        for channel in ctx.guild.channels:
+            await channel.delete()
+    
+    @command()
+    async def removeallroles(self, ctx):
+        for role in ctx.guild.roles:
+            try:
+                await role.delete()
+            except:
+                pass

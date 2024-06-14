@@ -79,6 +79,7 @@ gedit_help: "Bearbeitet eine Gruppe."
 gedit_group_param: "Name der Gruppe, die bearbeitet werden soll."
 gedit_key_param: "Feld das überschrieben werden soll: 'name', 'date', 'max_players', 'description'"
 gedit_val_param: "Neuer Wert für das Feld"
+gedit_key_error: "Ungültiges Feld. Gültige Felder sind: 'name', 'date', 'max_players', 'description'"
 
 
 gdestroy_help: "Löscht eine von dir erstellte Gruppe."
