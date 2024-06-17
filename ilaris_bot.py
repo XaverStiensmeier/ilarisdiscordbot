@@ -12,7 +12,7 @@ from config import messages as msg
 from cogs.generalCog import GeneralCommands
 from cogs.group import organize_group
 from cogs.groupsCog import GroupCommands
-from utility.sanitizer import sanitize_single
+from utility.sanitizer import sanitize
 
 # TODO: not sure where this belongs:
 NO_UPDATE_COMMAND_LIST = ["glist"]
@@ -32,15 +32,12 @@ logging.basicConfig(
     handlers=[handler]
 )
 
-
-
-
-# Credentials
-intents = discord.Intents().all()
-# Create bot
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# Function to read CSV and create a dictionary
+# NOTE: all mentions are disabled by default (links work but without ping)
+bot = commands.Bot(
+    command_prefix='!',
+    intents=discord.Intents().all(),
+    allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
+)
 
 
 # Startup Information
@@ -87,7 +84,7 @@ async def on_command_completion(ctx):
             name=config.settings.get("groups_channel"))
         if channel:
             await channel.purge()
-            for result_str in organize_group.list_groups(sanitize_single(ctx.guild)):
+            for result_str in organize_group.list_groups(sanitize(ctx.guild.name)):
                 await channel.send(result_str)
         else:
             logging.info("No group channel found.")
