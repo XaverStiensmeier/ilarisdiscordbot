@@ -13,10 +13,12 @@ import yaml
 import discord
 import asyncio
 from filelock import FileLock
+from dataclasses import dataclass
+from dataclasses import InitVar, field
 from typing import Union, List
 from discord import abc  # discords base classes
 from discord import (CategoryChannel, Interaction, Guild, Role, PermissionOverwrite,
-    Interaction, ButtonStyle, User, Member, Client, TextChannel)
+    Interaction, ButtonStyle, User, Member, Client, TextChannel, Message)
 from discord.ui import TextInput, button
 from discord.ext.commands import Context
 
@@ -35,12 +37,18 @@ from functools import wraps
 # file, so I renamed it to guilds.yml.
 data_file = DATA/"guilds.yml"
 
+
 def write_yaml():
     with open(data_file, "w+") as file:
         with FileLock("groups.yml.lock"):
             yaml.safe_dump(guilds, file)
 
+
 def save_yaml(original_function):
+    """Decorator to save yaml file after function call.
+    after a function decorated with this, the guilds dict is written to yaml file.
+    The wrapper works for both async and sync functions.
+    """
 
     @wraps(original_function)
     def wrapper(*args, **kwargs):
@@ -86,64 +94,64 @@ def get_id(object):
     return object.id
 
 
-class Group():
+@dataclass
+class Group:
     """ This class makes all group data and ui elements easy accessible and provides
     convenient methods to interact with the group. It's primarily used from within group
-    commands and views.
-    Most parameters of this class directly map to their dictionary representation.
-    However, the init function is quite flexible in terms of input types, to make it
-    easy to use in different scenarios. Methods use ids of discord objects when possible
-    to avoid unnecessary calls to discord API. The methods that require such calls
-    are usually async (i.e. setup_roles, create_channels).
-    # TODO: create, load, save, remove a dummy group as test case.
-    """
-    guilds = guilds
+    commands and views. Most attributes of this class directly map to their dictionary repr or json strings 
+    and are validated on the fly thanks to @dataclass: 
+    https://docs.python.org/3/library/dataclasses.html
+    However, some methods require some context (who called it, in which guild etc..) 
+    this context (or interaction) is processed in the post_init method, thats called
+    after the actual init, generated from @dataclass. Methods use ids of discord objects
+    when possible to avoid unnecessary calls to discord API. The methods that require 
+    such calls are usually async (i.e. setup_roles, create_channels).
+    # TODO: Add some tests
 
-    def __init__(self, name: str=None, slug: str=None, ctx: Context=None, 
-        inter: Interaction=None, guild: Union[Guild, int]=None,
-        owner: Union[abc.User, int]=None, category: Union[CategoryChannel, int]=None,
-        date: str="", max_players: int=4, description: str="", players: List[int]=[],
-        bot: discord.Client=None, channel: Union[TextChannel, int]=None,
-        role: int=None,
-        ) -> None:
-        """Creates a new group object.
-        The init function is a bit massive, but this allows to use it very flexible,
-        with different types of input. When using in context of
-        interactions/commands/yamlfile. 
-        @param name: Human readable name of the group (used as title)
-        @param slug: sanitized name of the group (used as key/id) unique per guild.
-        @param ctx: discord context object, to derive guild and owner
-        @param inter: interaction object, sets guild/owner if ctx is not given
-        @param owner: user object or id of the owner overwrites owner from ctx/inter
-        @param guild: guild object or id, overwrites owner from ctx/inter
-        """
-        self.name = name
-        self.slug = sanitize(name) if name else None
-        self.ctx = None
-        self.inter = None
-        if ctx:
-            self.ctx = ctx
-            self.guild = ctx.guild.id
-            self.owner = ctx.author.id
-            self.bot = ctx.bot
-        elif inter: 
+    Dataclass: https://docs.python.org/3/library/dataclasses.html
+    The decorator adds some default methods like __init__, __repr__ and allows
+    serialization to dict and json. All class variables below can be used as kw_args
+    in the constructor.. for example `my_group = Group(name="My Name", ctx=ctx)` will
+    create an instance where guild .
+    """
+    # context (initvars will be skipped in serialization)
+    inter: InitVar[Interaction] = None
+    ctx: InitVar[Context] = None
+    member: InitVar[abc.User] = None
+    bot: InitVar[discord.Client] = None  # required to create roles/channels
+    # serialized (standard dataclass fields)
+    name: str = None
+    guild: int = None
+    owner: int = None
+    date: str = ""
+    description: str = ""
+    max_players: int = 4
+    category: int = None
+    role: int = None
+    players: list = field(default_factory=list) 
+    # static
+    guilds: InitVar[dict] = guilds  # reference to the global guilds dict (??)
+
+    def __post_init__(self, inter, ctx, member, bot, guilds):
+        """Post init function to set context and user from initvars."""
+        self.guilds = guilds
+        self.slug = sanitize(self.name)
+        if inter:
             self.inter = inter
+            self.member = inter.user
             self.guild = inter.guild.id
-            self.owner = inter.user.id
-        if owner:
-            self.owner = get_id(owner)
-        if guild:
-            self.guild = get_id(guild)
-        if bot:
-            self.bot = bot
-        self.category = get_id(category)
-        self.channel = channel
-        self.date = date
-        self.max_players = max_players
-        self.description = description
-        self.players = [get_id(p) for p in players]
-        self.channels = []  # TODO remove?
-        self.role = role
+            self.bot = inter.bot
+        elif ctx:
+            self.ctx = ctx
+            self.member = ctx.author
+            self.guild = ctx.guild.id
+            self.bot = ctx.bot
+        else:
+            if member:
+                self.member = member
+            if bot:
+                self.bot = bot
+
 
     @classmethod
     def load(cls, name, ctx=None, inter=None, guild_id=None, create=False):

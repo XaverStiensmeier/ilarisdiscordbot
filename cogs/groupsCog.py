@@ -51,7 +51,8 @@ class GroupCommands(Cog):
             date=time,
             max_players=maximum_players,
             description=description,
-            ctx=ctx,  # sets owner and guild id
+            ctx=ctx,  # sets guild id
+            owner=ctx.author.id,
             bot=self.bot,
         )
         if group.exists:
