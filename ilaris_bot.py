@@ -30,14 +30,7 @@ handler = logging.handlers.RotatingFileHandler(
 )
 formatter = logging.Formatter("%(asctime)s.%(msecs)03d %(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
 handler.setFormatter(formatter)
-
 log = logging.getLogger('discord')
-# logging.basicConfig(
-#     level=logging.INFO, 
-#     format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-#     datefmt='%Y-%m-%d %H:%M:%S', 
-#     handlers=[handler]
-# )
 
 # NOTE: all mentions are disabled by default (links work but without ping)
 bot = commands.Bot(

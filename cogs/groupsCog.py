@@ -73,16 +73,17 @@ class GroupCommands(Cog):
         ):
         await ctx.reply(msg["glist_header"])
         for group in Group.groups_from_guild(ctx.guild.id):
-            group.message = await ctx.reply(group.info_message, view=group.info_view(ctx.author))
+            group.message = await ctx.reply(
+                group.info_message, view=group.info_view(ctx.author))
 
     @command(help=msg["gedit_help"], aliases=['gbearbeiten'])
     async def gedit(self, ctx,
-        group: str=param(description=msg["gedit_group_param"]),
+        group_name: str=param(description=msg["gedit_group_param"]),
         key: str=param(description=msg["gedit_key_param"]),
         value: str=param(description=msg["gedit_val_param"]),
     ):
         try:
-            group = Group.load(ctx.guild.id, group)
+            group = Group.load(group_name, ctx=ctx)
         except ValueError as e:
             await ctx.reply(str(e))
             return
@@ -95,6 +96,10 @@ class GroupCommands(Cog):
         if key == "max_players":
             value = int(value)
         setattr(group, key, value)
+        group.save()
+        success = msg["gedit_success"].format(group=group) + "\n"
+        success += msg["group_info"].format(group=group)
+        await ctx.reply(success)
 
     @command(help=msg["gdestroy_help"], aliases=['gentfernen'])
     async def gdestroy(

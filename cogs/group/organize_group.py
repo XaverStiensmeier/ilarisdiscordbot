@@ -67,7 +67,6 @@ def save_yaml(original_function):
         return wrapper
 
 
-
 @save_yaml
 def sigterm_handler(_signo, _stack_frame):
     sys.exit(0)
@@ -82,7 +81,6 @@ if os.path.isfile(data_file):
         guilds = yaml.safe_load(yaml_file) or {}
 else:
     logging.warning("No guilds file found. Trying to create one next save.")
-
 
 
 def get_id(object):
@@ -152,7 +150,6 @@ class Group:
             if bot:
                 self.bot = bot
 
-
     @classmethod
     def load(cls, name, ctx=None, inter=None, guild_id=None, create=False):
         """Loads a group object from the guilds dict.
@@ -165,6 +162,7 @@ class Group:
         if not guild_id:
             guild_id = ctx.guild.id if ctx else inter.guild.id
         slug = sanitize(name)
+        print(slug, guild_id)
         data = guilds.get(guild_id, {}).get(slug)
         if "slug" in data:
             data.pop('slug')  # do we want slug as part of dict/field or just key?
@@ -249,7 +247,7 @@ class Group:
         """convert object into dict (trivial rn, but could be extended later)"""
         return {
             "name": self.name,
-            "slug": self.slug,
+            # "slug": self.slug,
             "owner": self.owner,
             "guild": self.guild,
             "category": self.category,
@@ -405,17 +403,16 @@ class GroupView(BaseView):
         # ephemeral: only the interacting user sees the response.
         await inter.response.send_message(answer, ephemeral=True)
     
-
-    # adding a component using it's decorator (fancy shit)
-    @button(label=msg["btn_edit"], emoji="✏️", style=ButtonStyle.blurple)
-    async def edit(self, inter, button) -> None:
-        """ open modal to edit group on button click
-        TODO: not fully implemented yet, modal is just an example (not saving)
-        """
-        # group_form = GroupModal()
-        # await inter.response.send_modal(group_form)
-        print(inter.name)
-        # await inter.response.edit_message("Noch nicht implementiert", view=self)
+    # TODO: use edit button in gm or admin commands, not on list view
+    # @button(label=msg["btn_edit"], emoji="✏️", style=ButtonStyle.blurple)
+    # async def edit(self, inter, button) -> None:
+    #     """ open modal to edit group on button click
+    #     TODO: not fully implemented yet, modal is just an example (not saving)
+    #     """
+    #     # group_form = GroupModal()
+    #     # await inter.response.send_modal(group_form)
+    #     print(inter.name)
+    #     # await inter.response.edit_message("Noch nicht implementiert", view=self)
 
 
 
