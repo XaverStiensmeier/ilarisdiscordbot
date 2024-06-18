@@ -132,7 +132,7 @@ class Group:
     # static
     guilds: InitVar[dict] = guilds  # reference to the global guilds dict (??)
 
-    def __post_init__(self, inter, ctx, member, bot, guilds):
+    def __post_init__(self, inter, ctx, member, bot: discord.Client, guilds):
         """Post init function to set context and user from initvars."""
         self.guilds = guilds
         self.slug = sanitize(self.name)
@@ -166,6 +166,8 @@ class Group:
             guild_id = ctx.guild.id if ctx else inter.guild.id
         slug = sanitize(name)
         data = guilds.get(guild_id, {}).get(slug)
+        if "slug" in data:
+            data.pop('slug')  # do we want slug as part of dict/field or just key?
         if not data:
             if create:
                 return cls(name=name, ctx=ctx, inter=inter, guild=guild_id)
@@ -196,13 +198,19 @@ class Group:
     async def create_channels(self, welcome=True):
         """Creates channels for the group.
         """
-        guild = self.bot.get_guild(self.guild)  # get guild object from id
+        guild: discord.Guild = self.bot.get_guild(self.guild)  # get guild object from id
         if not guild or not self.role:
             raise ValueError("Guild and role are required to setup channels.")
         permissions = {
             guild.default_role: PermissionOverwrite(read_messages=False),
-            guild.get_role(self.role): PermissionOverwrite(read_messages=True)}
-        category = await guild.create_category(name=self.name)  # TODO: name or slug?
+            guild.get_role(self.role): PermissionOverwrite(read_messages=True),
+            guild.get_member(self.owner): PermissionOverwrite(
+                read_messages=True,
+                manage_channels=True,
+                manage_messages=True,
+                mute_members=True,
+                manage_nicknames=True)}
+        category = await guild.create_category(name=self.name, overwrites=permissions)
         logging.error("Created category: %s", category.id)
         self.category = category.id  # save category id
         text = await guild.create_text_channel(name="Text", 

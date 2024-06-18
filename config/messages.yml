@@ -28,6 +28,7 @@ r_result: |
   ```
 
 group_prefix: "Your group (without username)"
+group_name: "Name of your group."
 
 gcreate_help: "Creates a new group with yourself as the GM."
 gcreate_desc_default: "An exciting Ilaris session!"
