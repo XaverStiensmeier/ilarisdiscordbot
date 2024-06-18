@@ -127,6 +127,7 @@ class Group:
     category: int = None
     role: int = None
     players: list = field(default_factory=list) 
+    channel: int = None  # default channel
     # static
     guilds: InitVar[dict] = guilds  # reference to the global guilds dict (??)
 
@@ -153,7 +154,6 @@ class Group:
     @classmethod
     def load(cls, name, ctx=None, inter=None, guild_id=None, create=False):
         """Loads a group object from the guilds dict.
-        TODO: maybe allow passing context, to get guild_id?
         @param create: if True, a new (unsaved) group object is created for missing data
         @param ctx: set user, guild and bot from context
         @param inter: set user, guild and bot from interaction
@@ -293,6 +293,25 @@ class Group:
                 logging.error(f"Deleted channel {channel.name}.")
         await category.delete()
         logging.error(f"Deleted category {category}.")
+    
+    @save_yaml
+    def rename(self, new_name):
+        """Renames the group and updates the slug.
+        TODO: change category name and role name as well.
+        TODO: allow renaming that ends up in the same slug?
+        """
+        logging.debug(f"Renaming group {self.name} to {new_name}.")
+        old_slug = sanitize(self.name)
+        new_slug = sanitize(new_name)
+        if old_slug == new_slug:
+            self.name = new_name
+            return True, msg["group_renamed"].format(group=self)
+        if new_slug in guilds.get(self.guild, {}):
+            return False, msg["group_exists"]
+        if old_slug not in guilds.get(self.guild, {}):
+            return False, msg["group_not_found"]
+        self.name = new_name
+        guilds[self.guild][new_slug] = guilds[self.guild].pop(old_slug)
             
     @save_yaml
     async def destroy(self, user: Union[abc.User, int], cleanup=True, notify=True):
@@ -350,21 +369,33 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
     This popup can only be created from an interaction (i.e. button click or /command),
     but not from simple !commands. The fields can be set as class variables and the user
     input will be accessible from the instance as self.<field_name>.value.
-    TODO: allow to pass a group and prefill the fields for edit.
-    TODO: distinguish between create and edit mode, maybe track old group name (key)
-    TODO: create a modal as test case
+    We init the form with a group object and modify default values to fake an edit mode.
+    NOTE: When the name changes, the slug changes too. -> Two objects in case of rename.
     """
+    # this will be added to each instance (self.name...) from parent.
     name = TextInput(label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80)
     text = TextInput(label=msg["text_la"], placeholder=msg["text_ph"], required=False, max_length=1400, min_length=0, style=discord.TextStyle.long)
     max_players = TextInput(label=msg["slots_la"], placeholder=msg["slots_ph"], required=False, min_length=0, max_length=1, default=4)
     date = TextInput(label=msg["date_la"], placeholder=msg["date_ph"], required=False, min_length=0, max_length=150)
 
-    def __init__(self, name=None):
-        self.group = name
+    def __init__(self, group=None):
+        self.group = group
+        defaults = group.as_dict() if group else {
+            "name": "", "text": "", "max_players": 4, "date": ""}
         super().__init__(timeout=460.0)
+        # modify defaults when editing an existing group
+        self.name.default = group.name
+        self.text.default = group.description
+        self.max_players.default = group.max_players
+        self.date.default = group.date
 
     async def on_submit(self, inter: Interaction) -> None:
         # await super().on_submit(interaction)
+        # on name change the key of the dict is required to change (bad practise?)
+        if self.group is not None and self.name.value != self.group.name:
+            print("Name changed, creating new slug/key.")
+            group = Group.load(self.group.name, inter=inter, create=True)
+            group.rename(self.name.value)
         group = Group(  # create object from form input
             name=self.name.value,
             description=self.text.value,
@@ -383,9 +414,6 @@ class GroupView(BaseView):
     This is a placeholder for now. A view is can be attached to a message and contains
     interactive elements like buttons or select menus. Creating a class like this might 
     help to quickly create messages with group details and options to interact with them.
-    TODO: Only [Join]/[Leave], [Edit]/[Delete]/[Anounce] should be owner command (gedit)
-    TODO: Possible to hide buttons from non-owners or non-members?
-    TODO: Generate this view from a group dictionary or name
     """
     interaction = None
     message = None
@@ -402,18 +430,6 @@ class GroupView(BaseView):
                 inter.user.id)
         # ephemeral: only the interacting user sees the response.
         await inter.response.send_message(answer, ephemeral=True)
-    
-    # TODO: use edit button in gm or admin commands, not on list view
-    # @button(label=msg["btn_edit"], emoji="✏️", style=ButtonStyle.blurple)
-    # async def edit(self, inter, button) -> None:
-    #     """ open modal to edit group on button click
-    #     TODO: not fully implemented yet, modal is just an example (not saving)
-    #     """
-    #     # group_form = GroupModal()
-    #     # await inter.response.send_modal(group_form)
-    #     print(inter.name)
-    #     # await inter.response.edit_message("Noch nicht implementiert", view=self)
-
 
 
 class NewGroupView(BaseView):
@@ -426,6 +442,7 @@ class NewGroupView(BaseView):
         group_form = GroupModal()
         group_form.bot = self.bot
         await inter.response.send_modal(group_form)
+
 
 class GroupAdminView(BaseView):
     """Buttons for group admin commands like edit, delete, announce, etc.
@@ -441,6 +458,16 @@ class GroupAdminView(BaseView):
         group_form.edit = True
         await inter.response.send_modal(group_form)
 
+    @button(label=msg["btn_edit"], emoji="✏️", style=ButtonStyle.blurple)
+    async def edit(self, inter, button) -> None:
+        """ open modal to edit group on button click
+        TODO: not fully implemented yet, modal is just an example (not saving)
+        """
+        # group_form = GroupModal()
+        # await inter.response.send_modal(group_form)
+        print(inter.name)
+        # await inter.response.edit_message("Noch nicht implementiert", view=self)
+
     @button(label=msg["btn_destroy"], emoji="🗑️", style=ButtonStyle.red)
     async def destroy(self, inter, button) -> None:
         """ destroy a group from button click
@@ -453,140 +480,3 @@ class GroupAdminView(BaseView):
         status, answer = og.destroy_group(guild, self.group, inter.user.id)[:2]
         await inter.response.send_message(answer, ephemeral=True)
 
-
-# TODO: move to config.constants or config.messages
-PLAYER_NUMBER = "player_number"
-PLAYER_NUMBER_PRINT = "Spielerzahl"
-DATE = "date"
-DATE_PRINT = "Datum"
-DESCRIPTION = "description"
-DESCRIPTION_PRINT = "Beschreibung"
-PLAYER = "player"
-PLAYER_PRINT = "Beschreibung"
-CHANNELS = "channels"
-CATEGORY = "category"
-OWNER = "owner"
-
-
-
-def is_owner(guild, group, author_id):
-    logging.warning("DEPRECATED! use Group().is_owner() instead.")
-    group_data = guilds.get(guild, {}).get(group)
-    return group_data[OWNER] == author_id
-
-
-def group_exists(guild, group):
-    logging.warning("DEPRECATED! use Group().exists instead.")
-    return guilds.get(guild) and guilds[guild].get(group)
-
-
-@save_yaml
-def destroy_group(guild, group, author=None):
-    logging.warning("DEPRECATED! use Group.destroy() instead.")
-    group_data = guilds.get(guild, {}).get(group)
-    if group_data is None:
-        return False, "Die Gruppe existiert nicht.", [], [], []
-    if author and group_data[OWNER] != author:
-        return False, "Du bist nicht der Besitzer der Gruppe.", [], [], []
-    group_dict = guilds[guild].pop(group)
-    return 1, "Die Gruppe wurde gelöscht.", group_dict[PLAYER], group_dict[CHANNELS], group_dict[CATEGORY]
-
-
-def get_main_channel(guild, group):
-    logging.warning("DEPRECATED! use Group.default_channel instead.")
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_groups = guilds[guild]
-    if guild_groups.get(group):
-        return guild_groups[group].get(CHANNELS, [None])[0]
-    return None
-
-
-
-@save_yaml
-def remove_player(guild, group, player):
-    logging.warning("DEPRECATED! use Group.remove_player instead.")
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_guilds = guilds[guild]
-    if guild_guilds.get(group):
-        if player in guild_guilds[group][PLAYER]:
-            guild_guilds[group][PLAYER].remove(player)
-            return True, f"Spieler <@{player}> wurde entfernt."
-        else:
-            return False, f"Spieler <@{player}> ist nicht in Gruppe {group}."
-    else:
-        return False, f"Gruppe {group} existiert nicht."
-
-
-@save_yaml
-def add_self(guild, group, player):
-    """adds a player to a group
-    TODO: should be named add_player?
-    @param guild: guild id as string
-    @param group: (sanitized) group name
-    @param player: player id as string
-    """
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_groups = guilds[guild]
-    if guild_groups.get(group):
-        if player not in guild_groups[group][PLAYER]:
-            current_player_number = len(guild_groups[group][PLAYER])
-            maximum_player_number = int(guild_groups[group][PLAYER_NUMBER])
-            if current_player_number < maximum_player_number:
-                guild_groups[group][PLAYER].append(player)
-                return_str = f"Du wurdest Gruppe {group} hinzugefügt.\n"
-                return_str += f"Zum Verlassen `!gleave {group}`"
-                return True, return_str
-            else:
-                return False, f"Gruppe {group} ist bereits voll: {current_player_number}/{maximum_player_number}"
-        else:
-            return False, f"Du bist bereits Teil der Gruppe {group}."
-    else:
-        return False, f"Gruppe {group} existiert nicht."
-
-
-@save_yaml
-def remove_self(guild, group, player):
-    """removes a player from a group
-    TODO: should be named remove_player?
-    @param guild: guild id as string
-    @param group: (sanitized) group name
-    @param player: player id as string
-    """
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_groups = guilds[guild]
-    if guild_groups.get(group):
-        if player in guild_groups[group][PLAYER]:
-            guild_groups[group][PLAYER].remove(player)
-            return True, f"Du wurdest aus Gruppe {group} entfernt."
-        else:
-            return False, f"Du bist kein Spieler der Gruppe {group}."
-    else:
-        return False, f"Gruppe {group} existiert nicht."
-
-
-@save_yaml
-def remove_channel(guild, group, channel):
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_guilds = guilds[guild]
-    if guild_guilds.get(group):
-        guild_guilds[group][CHANNELS].remove(channel)
-
-
-def channel_exists(guild, group, channel):
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_groups = guilds[guild]
-    return guild_groups.get(group) and channel in guild_groups[group][CHANNELS]
-
-
-def is_owner(guild, group, author_id):
-    if not guilds.get(guild):
-        guilds[guild] = {}
-    guild_groups = guilds[guild]
-    print(guild_groups[group][OWNER], author_id)
-    return guild_groups.get(group) and guild_groups[group][OWNER] == author_id

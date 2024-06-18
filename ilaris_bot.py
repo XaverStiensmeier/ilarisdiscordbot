@@ -58,7 +58,7 @@ async def on_message(ctx):
 
 @bot.event
 async def on_command_error(ctx, error):
-    if ctx.command.has_error_handler():
+    if ctx.command and ctx.command.has_error_handler():
         return  # Do not handle commands that have their own handler
     logging.debug(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
