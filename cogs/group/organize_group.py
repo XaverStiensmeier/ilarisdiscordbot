@@ -15,21 +15,14 @@ import asyncio
 from filelock import FileLock
 from dataclasses import asdict, dataclass
 from dataclasses import InitVar, field
-from typing import Union, List
+from typing import Union
 from discord import abc  # discords base classes
 from discord import (
-    CategoryChannel,
     Interaction,
-    Guild,
-    Role,
     PermissionOverwrite,
     Interaction,
     ButtonStyle,
-    User,
-    Member,
     Client,
-    TextChannel,
-    Message,
 )
 from discord.ui import TextInput, button
 from discord.ext.commands import Context
@@ -89,6 +82,8 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 
 # LOAD GROUPS
 guilds = {}  # TODO: this could become a class variable instead of module level
+
+
 def load_data():
     if os.path.isfile(data_file):
         with open(data_file, "r") as yaml_file:
@@ -97,6 +92,8 @@ def load_data():
             guilds.update(data)
     else:
         logging.warning("No guilds file found. Trying to create one next save.")
+
+
 load_data()
 
 
@@ -113,21 +110,18 @@ def get_id(object):
 class Group:
     """This class makes all group data and ui elements easy accessible and provides
     convenient methods to interact with the group. It's primarily used from within group
-    commands and views. Most attributes of this class directly map to their dictionary repr or json strings
-    and are validated on the fly thanks to @dataclass:
+    commands and views. Most attributes of this class directly map to their dictionary 
+    repr or json strings and are validated on the fly thanks to @dataclass:
     https://docs.python.org/3/library/dataclasses.html
+    The decorator adds some default methods like __init__, __repr__ and allows
+    serialization to dict and json. All class variables below can be used as kw_args
+    in the constructor.. for example `my_group = Group(name="My Name", ctx=ctx)` will
+    create an instance where guild .
     However, some methods require some context (who called it, in which guild etc..)
     this context (or interaction) is processed in the post_init method, thats called
     after the actual init, generated from @dataclass. Methods use ids of discord objects
     when possible to avoid unnecessary calls to discord API. The methods that require
     such calls are usually async (i.e. setup_roles, create_channels).
-    # TODO: Add some tests
-
-    Dataclass: https://docs.python.org/3/library/dataclasses.html
-    The decorator adds some default methods like __init__, __repr__ and allows
-    serialization to dict and json. All class variables below can be used as kw_args
-    in the constructor.. for example `my_group = Group(name="My Name", ctx=ctx)` will
-    create an instance where guild .
     """
 
     # context (initvars will be skipped in serialization)
@@ -343,7 +337,7 @@ class Group:
     @save_yaml
     async def rename(self, new_name):
         """Renames the group and updates the slug.
-        Beside just changing group.name this function updates the slug and the key in 
+        Beside just changing group.name this function updates the slug and the key in
         the data dict, prevents duplicates and renames roles and channels.
         """
         logging.debug(f"Renaming group {self.name} to {new_name}.")
@@ -360,15 +354,12 @@ class Group:
         self.name = new_name
         self.slug = new_slug
         del guilds[self.guild][old_slug]  # remove old entry from dict
-        self.save() # write new name to dict to be saved correctly
+        self.save()  # write new name to dict to be saved correctly
         answer = msg["group_renamed"].format(group=self)
         guild = self.bot.get_guild(self.guild)
         try:  # rename category
             category = guild.get_channel(self.category)
-            print(category)
             await category.edit(name=new_name)
-            print("renamed")
-            print(category)
             category.name = new_name
         except Exception as e:
             logging.error(f"Error renaming category {category}: {e}")
@@ -442,9 +433,8 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
     but not from simple !commands. The fields can be set as class variables and the user
     input will be accessible from the instance as self.<field_name>.value.
     We init the form with a group object and modify default values to fake an edit mode.
-    NOTE: When the name changes, the slug changes too. -> Two objects in case of rename.
+    When the name changes, the slug changes too. -> Two objects in case of rename.
     """
-
     # this will be added to each instance (self.name...) from parent.
     name = TextInput(
         label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80
@@ -514,8 +504,9 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
 
 
 class GroupView(BaseView):
-    """Group detail View
+    """Group detail View, providing [join], [leave] buttons
     This view can be attached to a a group info message and provides buttons.
+    Add it to a message with `ctx.reply(message, view=GroupView(user, group))`.
     """
 
     def __init__(
