@@ -107,6 +107,7 @@ gremove_player: "Player to remove."
 gremove_info: "Bye bye <@{player}>."
 gremove_answer: "<@{player}> was removed from the group."
 gremove_role_fail: "Failed to remove role."
+gremove_no_player: "This player is not part of the group."
 
 gjoin_help: "Join a group as a player"
 gjoin_group: "Group you will join."

@@ -181,21 +181,8 @@ class GroupCommands(Cog):
         group: str = param(description=msg["group_prefix"]),
         player: discord.Member = param(description=msg["gremove_player"])
     ):
-        group = sanitize(group)
-        guild = sanitize(ctx.guild.name)
-        if not og.is_owner(guild, group, ctx.author.id):
-            await ctx.reply(msg["not_owner"])
-            return
-        status, result_str = og.remove_player(guild, group, player.id)
-        if status:
-            group_role = get(ctx.guild.roles, name=group)
-            # removing group role when existing
-            if group_role in player.roles:
-                await player.remove_roles(group_role)
-                logging.debug(f"Removed role {group_role} from user {player}.")
-            text_channel = ctx.guild.get_channel(og.get_main_channel(sanitize(ctx.guild.name), group))
-            await text_channel.send(msg["gremove_info"].format(player=player.id))
-
+        group = Group.load(group, ctx=ctx)
+        status, result_str = await group.remove_player(player.id)
         await ctx.reply(result_str)
 
     @command(help=msg["gjoin_help"], aliases=['gbeitreten'])

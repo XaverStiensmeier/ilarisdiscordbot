@@ -296,12 +296,14 @@ class Group:
 
     @save_yaml
     async def remove_player(self, player: Union[abc.User, int], check_owner=True):
-        """Removes a player from the group."""
+        """Removes a player from the group.
+        TODO: should we send a info message to the player and/or default channel?
+        """
         player_id = get_id(player)
-        if check_owner and not self.is_owner(player_id):
+        if check_owner and not self.is_owner(self.user):
             return False, msg["not_owner"]
         if not player_id in self.players:
-            return False, f"Spieler <@{player_id}> ist nicht in Gruppe {self.name}."
+            return False, msg["gremove_no_player"]
         self.players.remove(player_id)
         answer = msg["gremove_answer"].format(player=player_id)
         try: # try to remove role, or mention fail but still return success.
