@@ -88,12 +88,16 @@ signal.signal(signal.SIGINT, sigterm_handler)
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 # LOAD GROUPS
-guilds = {}
-if os.path.isfile(data_file):
-    with open(data_file, "r") as yaml_file:
-        guilds = yaml.safe_load(yaml_file) or {}
-else:
-    logging.warning("No guilds file found. Trying to create one next save.")
+guilds = {}  # TODO: this could become a class variable instead of module level
+def load_data():
+    if os.path.isfile(data_file):
+        with open(data_file, "r") as yaml_file:
+            data = yaml.safe_load(yaml_file) or {}
+            guilds.clear()  # change inplace after loading
+            guilds.update(data)
+    else:
+        logging.warning("No guilds file found. Trying to create one next save.")
+load_data()
 
 
 def get_id(object):
@@ -261,6 +265,10 @@ class Group:
             raise ValueError("User is required to create a group view.")
         return GroupView(user, self)
 
+    def admin_view(self):
+        """Returns buttons for group admin commands like edit, delete, announce, etc."""
+        return GroupAdminView(self)
+
     def as_dict(self):
         """convert object into dict (trivial rn, but could be extended later)
         NOTE: replace by as_dict(group)?
@@ -274,7 +282,7 @@ class Group:
             raise ValueError("Group needs a guild and a slug to be saved.")
         guilds.setdefault(self.guild, {})
         guilds[get_id(self.guild)][self.slug] = self.as_dict()
-    
+
     @save_yaml
     async def add_player(self, player: Union[abc.User, int], force=False):
         """Adds a player to the group."""
@@ -306,13 +314,13 @@ class Group:
             return False, msg["gremove_no_player"]
         self.players.remove(player_id)
         answer = msg["gremove_answer"].format(player=player_id)
-        try: # try to remove role, or mention fail but still return success.
+        try:  # try to remove role, or mention fail but still return success.
             guild = self.bot.get_guild(self.guild)
             role = guild.get_role(self.role)
             await guild.get_member(player_id).remove_roles(role)
         except Exception as e:
             logging.error(f"Error removing role {role}: {e}")
-            answer += "\n" + msg['gremove_role_error']
+            answer += "\n" + msg["gremove_role_error"]
         return True, answer
 
     async def remove_channels(self):
@@ -333,23 +341,45 @@ class Group:
         logging.error(f"Deleted category {category}.")
 
     @save_yaml
-    def rename(self, new_name):
+    async def rename(self, new_name):
         """Renames the group and updates the slug.
-        TODO: change category name and role name as well.
-        TODO: allow renaming that ends up in the same slug?
+        Beside just changing group.name this function updates the slug and the key in 
+        the data dict, prevents duplicates and renames roles and channels.
         """
         logging.debug(f"Renaming group {self.name} to {new_name}.")
         old_slug = sanitize(self.name)
         new_slug = sanitize(new_name)
         if old_slug == new_slug:
             self.name = new_name
+            self.save()
             return True, msg["group_renamed"].format(group=self)
         if new_slug in guilds.get(self.guild, {}):
             return False, msg["group_exists"]
         if old_slug not in guilds.get(self.guild, {}):
             return False, msg["group_not_found"]
         self.name = new_name
-        guilds[self.guild][new_slug] = guilds[self.guild].pop(old_slug)
+        self.slug = new_slug
+        del guilds[self.guild][old_slug]  # remove old entry from dict
+        self.save() # write new name to dict to be saved correctly
+        answer = msg["group_renamed"].format(group=self)
+        guild = self.bot.get_guild(self.guild)
+        try:  # rename category
+            category = guild.get_channel(self.category)
+            print(category)
+            await category.edit(name=new_name)
+            print("renamed")
+            print(category)
+            category.name = new_name
+        except Exception as e:
+            logging.error(f"Error renaming category {category}: {e}")
+            answer += "\n" + msg["rename_category_error"]
+        try:  # rename role
+            role = guild.get_role(self.role)
+            await role.edit(name=new_name)
+        except Exception as e:
+            logging.error(f"Error renaming role {role}: {e}")
+            answer += "\n" + msg["rename_role_error"]
+        return True, msg["group_renamed"].format(group=self)
 
     @save_yaml
     async def destroy(self, user: Union[abc.User, int], cleanup=True, notify=True):
@@ -445,14 +475,8 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
 
     def __init__(self, group=None):
         self.group = group
-        # defaults = (
-        #     group.as_dict()
-        #     if group is not None
-        #     else {"name": "", "text": "", "max_players": 4, "date": ""}
-        # )
         super().__init__(timeout=460.0)
-        # modify defaults when editing an existing group
-        if group:
+        if group:  # modify defaults when editing an existing group
             self.name.default = group.name
             self.text.default = group.description
             self.max_players.default = group.max_players
@@ -460,23 +484,33 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
 
     async def on_submit(self, inter: Interaction) -> None:
         # await super().on_submit(interaction)
-        # on name change the key of the dict is required to change (bad practise?)
-        if self.group is not None and self.name.value != self.group.name:
-            print("Name changed, creating new slug/key.")
-            group = Group.load(self.group.name, inter=inter, create=True)
-            group.rename(self.name.value)
-        group = Group(  # create object from form input
-            owner=inter.user.id,
-            name=self.name.value,
-            description=self.text.value,
-            max_players=int(self.max_players.value),
-            date=self.date.value,
-            inter=inter,
-            bot=self.bot,
-        )
-        group.save()  # write to yaml
-        await group.setup_guild()  # channels and roles etc..
-        await inter.response.send_message(msg["submit_success"], ephemeral=True)
+        if self.group:  # modify existing group (gedit)
+            group = Group.load(self.group.name, inter=inter)
+            group.description = self.text.value
+            group.max_players = int(self.max_players.value)
+            group.date = self.date.value
+            group.save()
+            if self.name.value != self.group.name:
+                status, answer = await group.rename(self.name.value)
+                if not status:
+                    await inter.response.send_message(answer, ephemeral=True)
+                    return
+            await inter.response.send_message(
+                msg["gedit_success"].format(group=self.group), ephemeral=True
+            )
+            return
+        else:  # create new one (gcreate)
+            group = Group(  # create object from form input
+                owner=inter.user.id,
+                name=self.name.value,
+                description=self.text.value,
+                max_players=int(self.max_players.value),
+                date=self.date.value,
+                inter=inter,
+            )
+            group.save()  # write to yaml
+            await group.setup_guild()  # channels and roles etc..
+            await inter.response.send_message(msg["submit_success"], ephemeral=True)
 
 
 class GroupView(BaseView):
@@ -497,8 +531,7 @@ class GroupView(BaseView):
         if self.group is None:  # should never happen, since group is required now
             status, answer = False, msg["no_group_set"]
         else:
-            status, answer = self.group.add_user(inter.user.id
-            )
+            status, answer = self.group.add_user(inter.user.id)
         # ephemeral: only the interacting user sees the response.
         await inter.response.send_message(answer, ephemeral=True)
 
@@ -518,25 +551,14 @@ class NewGroupView(BaseView):
 class GroupAdminView(BaseView):
     """Buttons for group admin commands like edit, delete, announce, etc."""
 
-    @discord.ui.button(label=msg["btn_edit"], style=discord.ButtonStyle.blurple)
-    async def edit(self, inter, button) -> None:
-        group_form = GroupModal()
-        group_form.name = self.name
-        group_form.text = self.text
-        group_form.max_players = self.max_players
-        group_form.date = self.date
-        group_form.edit = True
-        await inter.response.send_modal(group_form)
+    def __init__(self, group: Group, timeout: float = 60.0):
+        super().__init__(group.user, timeout=timeout)
+        self.group = group
 
     @button(label=msg["btn_edit"], emoji="✏️", style=ButtonStyle.blurple)
     async def edit(self, inter, button) -> None:
-        """open modal to edit group on button click
-        TODO: not fully implemented yet, modal is just an example (not saving)
-        """
-        # group_form = GroupModal()
-        # await inter.response.send_modal(group_form)
-        print(inter.name)
-        # await inter.response.edit_message("Noch nicht implementiert", view=self)
+        group_form = GroupModal(group=self.group)
+        await inter.response.send_modal(group_form)
 
     @button(label=msg["btn_destroy"], emoji="🗑️", style=ButtonStyle.red)
     async def destroy(self, inter, button) -> None:

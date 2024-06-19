@@ -79,8 +79,10 @@ class GroupCommands(Cog):
     @command(help=msg["gedit_help"], aliases=['gbearbeiten'])
     async def gedit(self, ctx,
         group_name: str=param(description=msg["gedit_group_param"]),
-        key: str=param(description=msg["gedit_key_param"]),
-        value: str=param(description=msg["gedit_val_param"]),
+        name: str=param(description=msg["gedit_name_param"], default=None),
+        date: str=param(description=msg["gedit_date_param"], default=None),
+        description: str=param(description=msg["gedit_desc_param"], default=None),
+        max_players: int=param(description=msg["gedit_maxplayers_param"], default=None)
     ):
         try:
             group = Group.load(group_name, ctx=ctx)
@@ -90,17 +92,24 @@ class GroupCommands(Cog):
         if not group.is_owner(ctx.author.id):  # TODO: or admin
             await ctx.reply(msg["not_owner"])
             return
-        if not key in ["name", "date", "description", "max_players"]:
-            await ctx.reply(msg["gedit_key_error"])
+        if not date and not description and not max_players and not name:
+            admin_view = group.admin_view()
+            await ctx.reply(msg["gedit_no_args"], view=admin_view)
             return
-        if key == "max_players":
-            value = int(value)
-        setattr(group, key, value)
-        group.save()
+        if date:
+            group.date = date
+        if description:
+            group.description = description
+        if max_players:
+            group.max_players = max_players
+        if date or description or max_players:
+            group.save()
+        if name:
+            await group.rename(name)
         success = msg["gedit_success"].format(group=group) + "\n"
         success += msg["group_info"].format(group=group)
         await ctx.reply(success)
-
+    
     @command(help=msg["gdestroy_help"], aliases=['gentfernen'])
     async def gdestroy(
         self, ctx, 
@@ -116,6 +125,7 @@ class GroupCommands(Cog):
         status, answer = await group.destroy(ctx.author)
         await ctx.reply(answer)
 
+    # TODO: move to admin commands when available
     @command(
         help=msg["gpurge_help"],
         aliases=['gbereinigen'],
@@ -129,51 +139,6 @@ class GroupCommands(Cog):
     ):
         await self.delete_group(ctx, group_name)
 
-    @command(
-        help=msg["gsetdate_help"],
-        aliases=['gsetzedatum'])
-    async def gsetdate(self, ctx, 
-        group_prefix: str = param(description=msg["group_prefix"]),
-        value: str = param(
-            description=msg["gsetdate_value"])
-    ):
-        group = sanitize(group_prefix)
-        result_str = og.set_key(sanitize(ctx.guild.name), group, og.DATE, value)
-        await ctx.reply(result_str)
-
-    @command(
-        help=msg["gsetdescription_help"],
-        aliases=['gsetzebeschreibung'])
-    async def gsetdescription(
-        self, ctx, 
-        group: str = param(description=msg["gsetdescription_group"]),
-        value: str = param(
-            description=msg["gsetdescription_value"])
-    ):
-        group = sanitize(group)
-        guild = sanitize(ctx.guild.name)
-        # TODO: or admin.. add easier permission checks (pass context to group method)
-        if not og.is_owner(guild, group, ctx.author.id):
-            await ctx.reply(msg["not_owner"])
-            return
-        result_str = og.set_key(sanitize(ctx.guild.name), group, og.DESCRIPTION, value)
-        await ctx.reply(result_str)
-
-    @command(
-        help=msg["gsetnumberofplayers_help"],
-        aliases=['gsetzespieleranzahl'])
-    async def gsetnumberofplayers(
-        self, ctx,
-        group_prefix: str = param(description=msg["group_prefix"]),
-    value: str = param(
-        description=msg["gsetnumberofplayers_value"])):
-        group = sanitize(group_prefix)
-        guild = sanitize(ctx.guild.name)
-        if not og.is_owner(guild, group, ctx.author.id):
-            await ctx.reply(msg["not_owner"])
-            return
-        result_str = og.set_key(guild, group, og.PLAYER_NUMBER, value)
-        await ctx.reply(result_str)
 
     @command(help=msg["gremove_help"], aliases=['gkick'])
     async def gremove(
@@ -229,55 +194,6 @@ class GroupCommands(Cog):
 
         await ctx.reply(result_str)
 
-    # TODO: if permissions for channels/roles work, than remove this command and messages
-    @command(help=msg["gaddchannel_help"],
-                      aliases=['gchannelhinzufügen'])
-    async def gaddchannel(
-        self, ctx, 
-        group: str = param(description=msg["group_name"]),
-        channel_name: str = param(
-            description=msg["gaddchannel_channel"]),
-        is_voice: bool = param(
-            default=False,
-            description=msg["gaddchannel_voice"])
-    ):
-        """Create a new text or voice channel in the specified group category.
-        NOTE: Added permissions for owner to manage category channel.
-        Should be able to create channels using discord ui.
-        """
-        # TODO: only allow for gm or for everyone?
-        slug = sanitize(group)
-        sanitized_guild = sanitize(ctx.guild.name)
-        category = discord.utils.get(ctx.guild.categories, name=group)
-
-        # Handle Roles
-        everyone = ctx.guild.default_role
-        role = discord.utils.get(ctx.guild.roles, name=group)
-        overwrites = {everyone: discord.PermissionOverwrite(read_messages=False),
-                      role: discord.PermissionOverwrite(read_messages=True)}
-
-        # Add Channel
-        if is_voice:
-            voice_channel = await ctx.guild.create_voice_channel(
-                name=channel_name, 
-                overwrites=overwrites,
-                category=category
-            )
-            og.add_channel(sanitized_guild, slug, voice_channel.id)
-            logging.debug(f"Created voice channel {voice_channel}")
-            await ctx.reply(msg["gaddchannel_created_voice"])
-        else:
-            print(category)
-            print(overwrites)
-            text_channel = await ctx.guild.create_text_channel(
-                name=channel_name, 
-                overwrites=overwrites,
-                category=category
-            )
-            # og.add_channel(sanitized_guild, slug, text_channel.id)
-            # not need. group only tracks category
-            logging.debug(f"Created text channel {text_channel}")
-            await ctx.reply(msg["gaddchannel_created_text"])
 
     # TODO: remove and/or make this admin commands only (maybe confirm dialog)
     @command()
@@ -300,3 +216,9 @@ class GroupCommands(Cog):
         await group.add_player(player.id)
         await ctx.reply(f"Added <@{player.id}> to {group.name}")
         
+
+    # TODO: should be admin command:
+    @command()
+    async def reload_data(self, ctx):
+        og.load_data()
+        await ctx.reply("Data reloaded.")

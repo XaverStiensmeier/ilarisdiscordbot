@@ -79,10 +79,17 @@ group_info: |
 
 gedit_help: "Bearbeitet eine Gruppe."
 gedit_group_param: "Name der Gruppe, die bearbeitet werden soll."
-gedit_key_param: "Field to change. Options are: 'name', 'date', 'max_players', 'description'"
-gedit_val_param: "New value for the field"
-gedit_key_error: "Invalid field. Valid fields are: 'name', 'date', 'max_players', 'description'"
+gedit_name_param: "New name of the group."
+gedit_date_param: "Change groups date."
+gedit_maxplayers_param: "Change the maximum number of players."
+gedit_desc_param: "Change the description of the group."
+gedit_no_args: >
+  No optional arguments given. Either provide one or more arguments starting with 
+  `name=`, `date=`, `max_player=` or `description=` or click the button below to 
+  use the edit form.
 gedit_success: "Group {group.name} changed."
+rename_category_error: "Failed to rename category."
+rename_role_error: "Failed to rename role."
 
 gdestroy_help: "Destroys a group that you've created."
 gdestroy_name_param: "Name of the group you want to destroy."
