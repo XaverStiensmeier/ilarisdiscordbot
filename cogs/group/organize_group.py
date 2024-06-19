@@ -13,12 +13,24 @@ import yaml
 import discord
 import asyncio
 from filelock import FileLock
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from dataclasses import InitVar, field
 from typing import Union, List
 from discord import abc  # discords base classes
-from discord import (CategoryChannel, Interaction, Guild, Role, PermissionOverwrite,
-    Interaction, ButtonStyle, User, Member, Client, TextChannel, Message)
+from discord import (
+    CategoryChannel,
+    Interaction,
+    Guild,
+    Role,
+    PermissionOverwrite,
+    Interaction,
+    ButtonStyle,
+    User,
+    Member,
+    Client,
+    TextChannel,
+    Message,
+)
 from discord.ui import TextInput, button
 from discord.ext.commands import Context
 
@@ -26,7 +38,6 @@ from utility.sanitizer import sanitize
 from config import DATA
 from config import messages as msg
 from views.base import BaseModal, BaseView
-from cogs.group import organize_group as og
 from utility.sanitizer import sanitize
 from config import messages as msg
 from functools import wraps
@@ -35,7 +46,7 @@ from functools import wraps
 
 # root level of the file are server, we could also save server specific data in the same
 # file, so I renamed it to guilds.yml.
-data_file = DATA/"guilds.yml"
+data_file = DATA / "guilds.yml"
 
 
 def write_yaml():
@@ -61,6 +72,7 @@ def save_yaml(original_function):
         result = await original_function(*args, **kwargs)
         write_yaml()
         return result
+
     if asyncio.iscoroutinefunction(original_function):
         return async_wrapper
     else:
@@ -70,6 +82,7 @@ def save_yaml(original_function):
 @save_yaml
 def sigterm_handler(_signo, _stack_frame):
     sys.exit(0)
+
 
 signal.signal(signal.SIGINT, sigterm_handler)
 signal.signal(signal.SIGTERM, sigterm_handler)
@@ -94,15 +107,15 @@ def get_id(object):
 
 @dataclass
 class Group:
-    """ This class makes all group data and ui elements easy accessible and provides
+    """This class makes all group data and ui elements easy accessible and provides
     convenient methods to interact with the group. It's primarily used from within group
-    commands and views. Most attributes of this class directly map to their dictionary repr or json strings 
-    and are validated on the fly thanks to @dataclass: 
+    commands and views. Most attributes of this class directly map to their dictionary repr or json strings
+    and are validated on the fly thanks to @dataclass:
     https://docs.python.org/3/library/dataclasses.html
-    However, some methods require some context (who called it, in which guild etc..) 
+    However, some methods require some context (who called it, in which guild etc..)
     this context (or interaction) is processed in the post_init method, thats called
     after the actual init, generated from @dataclass. Methods use ids of discord objects
-    when possible to avoid unnecessary calls to discord API. The methods that require 
+    when possible to avoid unnecessary calls to discord API. The methods that require
     such calls are usually async (i.e. setup_roles, create_channels).
     # TODO: Add some tests
 
@@ -112,6 +125,7 @@ class Group:
     in the constructor.. for example `my_group = Group(name="My Name", ctx=ctx)` will
     create an instance where guild .
     """
+
     # context (initvars will be skipped in serialization)
     inter: InitVar[Interaction] = None
     ctx: InitVar[Context] = None
@@ -126,7 +140,7 @@ class Group:
     max_players: int = 4
     category: int = None
     role: int = None
-    players: list = field(default_factory=list) 
+    players: list = field(default_factory=list)
     channel: int = None  # default channel
     # static
     guilds: InitVar[dict] = guilds  # reference to the global guilds dict (??)
@@ -139,12 +153,12 @@ class Group:
             self.inter = inter
             self.member = inter.user
             self.guild = inter.guild.id
-            self.bot = inter.bot
+            self.bot: Client = inter.client
         elif ctx:
             self.ctx = ctx
             self.member = ctx.author
             self.guild = ctx.guild.id
-            self.bot = ctx.bot
+            self.bot: Client = ctx.bot
         else:
             if member:
                 self.member = member
@@ -165,7 +179,7 @@ class Group:
         print(slug, guild_id)
         data = guilds.get(guild_id, {}).get(slug)
         if "slug" in data:
-            data.pop('slug')  # do we want slug as part of dict/field or just key?
+            data.pop("slug")  # do we want slug as part of dict/field or just key?
         if not data:
             if create:
                 return cls(name=name, ctx=ctx, inter=inter, guild=guild_id)
@@ -192,11 +206,12 @@ class Group:
             await self.inter.user.add_roles(role)
         for p in self.players:
             await guild.get_member(p).add_roles(role)
-    
+
     async def create_channels(self, welcome=True):
-        """Creates channels for the group.
-        """
-        guild: discord.Guild = self.bot.get_guild(self.guild)  # get guild object from id
+        """Creates channels for the group."""
+        guild: discord.Guild = self.bot.get_guild(
+            self.guild
+        )  # get guild object from id
         if not guild or not self.role:
             raise ValueError("Guild and role are required to setup channels.")
         permissions = {
@@ -207,18 +222,21 @@ class Group:
                 manage_channels=True,
                 manage_messages=True,
                 mute_members=True,
-                manage_nicknames=True)}
+                manage_nicknames=True,
+            ),
+        }
         category = await guild.create_category(name=self.name, overwrites=permissions)
         logging.error("Created category: %s", category.id)
         self.category = category.id  # save category id
-        text = await guild.create_text_channel(name="Text", 
-            overwrites=permissions, category=category)
+        text = await guild.create_text_channel(
+            name="Text", overwrites=permissions, category=category
+        )
         self.default_channel = text.id  # maybe set one channel as the one the bot uses?
         await guild.create_voice_channel(
-            name="Voice", overwrites=permissions, category=category)
+            name="Voice", overwrites=permissions, category=category
+        )
         if welcome:
-            await text.send(msg["gcreate_channel_created"].format(
-                author=self.user.id))
+            await text.send(msg["gcreate_channel_created"].format(author=self.user.id))
 
     async def setup_guild(self):
         """Creates and assignes roles/channels permissions for this group."""
@@ -228,36 +246,27 @@ class Group:
     def __str__(self):
         """String representation of a group. str(group), print(group)..."""
         return f"{self.name} ({self.owner})"
-    
+
     @property
     def info_message(self):
         """message content for !ginfo and the like"""
         return msg["group_info"].format(group=self)
-    
-    def info_view(self, user: abc.User=None):
+
+    def info_view(self, user: abc.User = None):
         """Returns buttons for group details for this group.
         @param user: user object, required if no ctx or inter is set.
         """
         user = user if user else self.user
         if not user:
             raise ValueError("User is required to create a group view.")
-        return GroupView(user)
-    
+        return GroupView(user, self)
+
     def as_dict(self):
-        """convert object into dict (trivial rn, but could be extended later)"""
-        return {
-            "name": self.name,
-            # "slug": self.slug,
-            "owner": self.owner,
-            "guild": self.guild,
-            "category": self.category,
-            "date": self.date, 
-            "role": self.role,
-            "max_players": self.max_players,
-            "description": self.description,
-            "players": self.players,
-        }
-    
+        """convert object into dict (trivial rn, but could be extended later)
+        NOTE: replace by as_dict(group)?
+        """
+        return asdict(self)
+
     @save_yaml
     def save(self):
         """Saves the group object to the guilds dict."""
@@ -267,16 +276,43 @@ class Group:
         guilds[get_id(self.guild)][self.slug] = self.as_dict()
     
     @save_yaml
-    def remove_player(self, player: Union[abc.User, int], check_owner=True):
+    async def add_player(self, player: Union[abc.User, int], force=False):
+        """Adds a player to the group."""
+        player_id = get_id(player)
+        if player_id in self.players:
+            return False, msg["gadd_exists"]
+        if self.player_count >= self.max_players and not force:
+            return False, msg["gadd_full"]
+        self.players.append(player_id)
+        answer = msg["gadd_answer"].format(player=player_id, group=self)
+        try:  # try to add role, or mention fail but still return success.
+            guild = self.bot.get_guild(self.guild)
+            role = guild.get_role(self.role)
+            await guild.get_member(player_id).add_roles(role)
+        except Exception as e:
+            logging.error(f"Error adding role {role}: {e}")
+            answer += "\n" + msg["gadd_role_error"]
+        return True, answer
+
+    @save_yaml
+    async def remove_player(self, player: Union[abc.User, int], check_owner=True):
         """Removes a player from the group."""
         player_id = get_id(player)
         if check_owner and not self.is_owner(player_id):
             return False, msg["not_owner"]
-        if player_id in self.players:
-            self.players.remove(player_id)
-            return True, f"Spieler <@{player_id}> wurde entfernt."
-        return False, f"Spieler <@{player_id}> ist nicht in Gruppe {self.name}."
-    
+        if not player_id in self.players:
+            return False, f"Spieler <@{player_id}> ist nicht in Gruppe {self.name}."
+        self.players.remove(player_id)
+        answer = msg["gremove_answer"].format(player=player_id)
+        try: # try to remove role, or mention fail but still return success.
+            guild = self.bot.get_guild(self.guild)
+            role = guild.get_role(self.role)
+            await guild.get_member(player_id).remove_roles(role)
+        except Exception as e:
+            logging.error(f"Error removing role {role}: {e}")
+            answer += "\n" + msg['gremove_role_error']
+        return True, answer
+
     async def remove_channels(self):
         """Removes all channels of the group.
         NOTE: as this function is used to be called from destroy, it is not wrapped
@@ -293,7 +329,7 @@ class Group:
                 logging.error(f"Deleted channel {channel.name}.")
         await category.delete()
         logging.error(f"Deleted category {category}.")
-    
+
     @save_yaml
     def rename(self, new_name):
         """Renames the group and updates the slug.
@@ -312,7 +348,7 @@ class Group:
             return False, msg["group_not_found"]
         self.name = new_name
         guilds[self.guild][new_slug] = guilds[self.guild].pop(old_slug)
-            
+
     @save_yaml
     async def destroy(self, user: Union[abc.User, int], cleanup=True, notify=True):
         """Removes the group and all its data from database.
@@ -340,54 +376,85 @@ class Group:
         if notify:
             for player_id in self.players:
                 member = guild.get_member(player_id)
-                await member.send(msg["group_deleted_info"].format(author=user, group=self))
+                await member.send(
+                    msg["group_deleted_info"].format(author=user, group=self)
+                )
         return True, msg["gdestroy_info"].format(group=self)
 
     def is_owner(self, user: Union[abc.User, int]):
         return get_id(self.owner) == get_id(user)
-    
+
     @property
     def player_count(self):
         return len(self.players)
-    
+
     @property
     def user(self):
-        """this does return command author or button clicker, not the owner"""
+        """this does return command author or button clicker, not the owner
+        NOTE: should be removable when we use /commands with interactions only.
+        """
         if self.ctx:
             return self.ctx.author
         elif self.inter:
             return self.inter.user
         return None
-    
+
     @property
     def exists(self):
         return self.slug in guilds.get(self.guild, {})
 
 
 class GroupModal(BaseModal, title="Neue Gruppe"):
-    """ Modal for creating or editing a group
+    """Modal for creating or editing a group
     This popup can only be created from an interaction (i.e. button click or /command),
     but not from simple !commands. The fields can be set as class variables and the user
     input will be accessible from the instance as self.<field_name>.value.
     We init the form with a group object and modify default values to fake an edit mode.
     NOTE: When the name changes, the slug changes too. -> Two objects in case of rename.
     """
+
     # this will be added to each instance (self.name...) from parent.
-    name = TextInput(label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80)
-    text = TextInput(label=msg["text_la"], placeholder=msg["text_ph"], required=False, max_length=1400, min_length=0, style=discord.TextStyle.long)
-    max_players = TextInput(label=msg["slots_la"], placeholder=msg["slots_ph"], required=False, min_length=0, max_length=1, default=4)
-    date = TextInput(label=msg["date_la"], placeholder=msg["date_ph"], required=False, min_length=0, max_length=150)
+    name = TextInput(
+        label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80
+    )
+    text = TextInput(
+        label=msg["text_la"],
+        placeholder=msg["text_ph"],
+        required=False,
+        max_length=1400,
+        min_length=0,
+        style=discord.TextStyle.long,
+    )
+    max_players = TextInput(
+        label=msg["slots_la"],
+        placeholder=msg["slots_ph"],
+        required=False,
+        min_length=0,
+        max_length=1,
+        default=4,
+    )
+    date = TextInput(
+        label=msg["date_la"],
+        placeholder=msg["date_ph"],
+        required=False,
+        min_length=0,
+        max_length=150,
+    )
 
     def __init__(self, group=None):
         self.group = group
-        defaults = group.as_dict() if group else {
-            "name": "", "text": "", "max_players": 4, "date": ""}
+        # defaults = (
+        #     group.as_dict()
+        #     if group is not None
+        #     else {"name": "", "text": "", "max_players": 4, "date": ""}
+        # )
         super().__init__(timeout=460.0)
         # modify defaults when editing an existing group
-        self.name.default = group.name
-        self.text.default = group.description
-        self.max_players.default = group.max_players
-        self.date.default = group.date
+        if group:
+            self.name.default = group.name
+            self.text.default = group.description
+            self.max_players.default = group.max_players
+            self.date.default = group.date
 
     async def on_submit(self, inter: Interaction) -> None:
         # await super().on_submit(interaction)
@@ -397,12 +464,13 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
             group = Group.load(self.group.name, inter=inter, create=True)
             group.rename(self.name.value)
         group = Group(  # create object from form input
+            owner=inter.user.id,
             name=self.name.value,
             description=self.text.value,
             max_players=int(self.max_players.value),
             date=self.date.value,
             inter=inter,
-            bot=self.bot
+            bot=self.bot,
         )
         group.save()  # write to yaml
         await group.setup_guild()  # channels and roles etc..
@@ -410,30 +478,31 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
 
 
 class GroupView(BaseView):
-    """ Group detail View
-    This is a placeholder for now. A view is can be attached to a message and contains
-    interactive elements like buttons or select menus. Creating a class like this might 
-    help to quickly create messages with group details and options to interact with them.
+    """Group detail View
+    This view can be attached to a a group info message and provides buttons.
     """
-    interaction = None
-    message = None
-    group = None  # for now sanitized name, turns into group object later
-    
+
+    def __init__(
+        self, user: discord.User | discord.Member, group: Group, timeout: float = 60.0
+    ):
+        super().__init__(user, timeout=timeout)
+        self.group = group
+        self.interaction = None
+        self.message = None
+
     @button(label=msg["btn_join"], emoji="🍻", style=ButtonStyle.green)
     async def join(self, inter: Interaction, button) -> None:
-        if self.group is None:
+        if self.group is None:  # should never happen, since group is required now
             status, answer = False, msg["no_group_set"]
         else:
-            status, answer = og.add_self(
-                sanitize(inter.guild.name),
-                sanitize(self.group),
-                inter.user.id)
+            status, answer = self.group.add_user(inter.user.id
+            )
         # ephemeral: only the interacting user sees the response.
         await inter.response.send_message(answer, ephemeral=True)
 
 
 class NewGroupView(BaseView):
-    """ View for !gcreate command
+    """View for !gcreate command
     NOTE: not yet implemented.. try with !view. Maybe we can reuse the group_modal
     """
 
@@ -445,8 +514,7 @@ class NewGroupView(BaseView):
 
 
 class GroupAdminView(BaseView):
-    """Buttons for group admin commands like edit, delete, announce, etc.
-    """
+    """Buttons for group admin commands like edit, delete, announce, etc."""
 
     @discord.ui.button(label=msg["btn_edit"], style=discord.ButtonStyle.blurple)
     async def edit(self, inter, button) -> None:
@@ -460,7 +528,7 @@ class GroupAdminView(BaseView):
 
     @button(label=msg["btn_edit"], emoji="✏️", style=ButtonStyle.blurple)
     async def edit(self, inter, button) -> None:
-        """ open modal to edit group on button click
+        """open modal to edit group on button click
         TODO: not fully implemented yet, modal is just an example (not saving)
         """
         # group_form = GroupModal()
@@ -470,13 +538,12 @@ class GroupAdminView(BaseView):
 
     @button(label=msg["btn_destroy"], emoji="🗑️", style=ButtonStyle.red)
     async def destroy(self, inter, button) -> None:
-        """ destroy a group from button click
+        """destroy a group from button click
         TODO: check permissions, maybe confirm dialog?
         """
         guild = sanitize(inter.guild.name)
-        if not og.is_owner(guild, self.group, inter.user.id):
+        if not self.group.is_owner(inter.user):
             await inter.response.send_message(msg["not_owner"], ephemeral=True)
             return
         status, answer = og.destroy_group(guild, self.group, inter.user.id)[:2]
         await inter.response.send_message(answer, ephemeral=True)
-

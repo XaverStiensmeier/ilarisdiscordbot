@@ -242,6 +242,7 @@ class GroupCommands(Cog):
 
         await ctx.reply(result_str)
 
+    # TODO: if permissions for channels/roles work, than remove this command and messages
     @command(help=msg["gaddchannel_help"],
                       aliases=['gchannelhinzufügen'])
     async def gaddchannel(
@@ -304,3 +305,11 @@ class GroupCommands(Cog):
                 await role.delete()
             except:
                 pass
+    
+    # TODO: should be admin and/or GM command?
+    @command()
+    async def gadd(self, ctx, group: str, player: discord.Member):
+        group = Group.load(group, ctx=ctx)
+        await group.add_player(player.id)
+        await ctx.reply(f"Added <@{player.id}> to {group.name}")
+        

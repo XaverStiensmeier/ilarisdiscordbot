@@ -90,7 +90,9 @@ class BaseModal(discord.ui.Modal):
 
     # make sure any errors don't get ignored
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
         message = f"An error occurred while processing the interaction:\n```py\n{error}\n```"
+        message += tb
         try:
             await interaction.response.send_message(message, ephemeral=True)
         except discord.InteractionResponded:
