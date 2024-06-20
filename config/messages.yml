@@ -23,7 +23,7 @@ r_help: |
 r_desc: "Dice string to parse."
 r_result: |
   ```md
-  # {author} --- {identifier} {result}
+  # {author} -- {identifier} {result}
   Details: {details}
   ```
 

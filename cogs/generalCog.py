@@ -11,16 +11,21 @@ from cogs.general import ilaris_database
 from cogs.general import parse_die
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(RESOURCES/"manoeverkarten")]
-NAMED_ROLLS = [
+NAMED_ROLLS = [  # TODO: should this be part of settings?
     ("IIIoo", "2@5d20"), ("IIIo", "2@4d20"), ("Ioo", "1@3d20"), 
     ("Io", "1@2d20"), ("ooIII", "4@5d20"), ("oIII", "3@4d20"), 
     ("ooI", "3@3d20"), ("oI", "2@2d20"), ("III", "2@3d20"), ("I", "1d20")
 ]
 
 
+def emojify_number(num):
+    s = str(num)
+    emos = ["0️⃣", "1️⃣", " 2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
+    return "".join([emos[int(i)] for i in s])
+
+
 class GeneralCommands(commands.Cog):
-    """
-    Commands for handling general stuff
+    """Commands for handling general stuff
     """
 
     def __init__(self, bot):
@@ -64,22 +69,35 @@ class GeneralCommands(commands.Cog):
                 await ctx.reply(msg["card_best_matches"].format(best=three_best))
         else:
             await ctx.reply(msg["card_not_found"])
-
+    
     @commands.command(help=msg["r_help"], aliases=['w'])
-    async def r(self, ctx, roll: str = commands.parameter(default="III", description=msg["r_desc"]),
-                identifier: str = commands.parameter(default="", description="Identifier.")):
+    async def r(self, ctx, 
+            roll: str = commands.parameter(default="III", description=msg["r_desc"]),
+            identifier: str = commands.parameter(default="", description="Identifier.")):
         roll = roll.replace(" ", "")
         for key, value in NAMED_ROLLS:
             roll = roll.replace(key, value)
         total_result_str, total_result = parse_die.parse_roll(roll)
-        total_result = msg["r_result"].format(
+        total_result_text = msg["r_result"].format(
             author=ctx.author.display_name,
             identifier=identifier,
             result=total_result,
             details=total_result_str
         )
         await ctx.message.delete()
-        response = await ctx.send(total_result)
+        title = identifier if identifier else "Würfelergebnis"
+        print(total_result)
+        emo_num = emojify_number(total_result)
+        title = emo_num + " " + title
+        if total_result < 12:
+            color = discord.Color.red()
+        elif total_result < 20:
+            color = discord.Color.gold()
+        else:
+            color = discord.Color.green()
+        embed = discord.Embed(title=title, description=total_result_text, color=color)
+        embed.set_thumbnail(url="https://cdn.pixabay.com/photo/2022/04/16/19/39/d20-7136921_1280.png")
+        response = await ctx.send(total_result, embed=embed)
         # await response.delete(delay=300)
         await response.add_reaction("❌")
 
