@@ -73,6 +73,7 @@ class GroupCommands(Cog):
         ):
         await ctx.reply(msg["glist_header"])
         for group in Group.groups_from_guild(ctx.guild.id):
+            group.bot = self.bot  # pass bot so group can fetch data form discord api.
             group.message = await ctx.reply(
                 group.info_message, view=group.info_view(ctx.author))
 
@@ -152,47 +153,34 @@ class GroupCommands(Cog):
 
     @command(help=msg["gjoin_help"], aliases=['gbeitreten'])
     async def gjoin(self, ctx, 
-        group: str = param(description=msg["gjoin_group"])
+        group_name: str = param(description=msg["gjoin_group"])
     ):
-        group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
+        # We could use directly group.add_player() here, the if clauses are only to
+        # provide more detailed response messages.
+        group = Group.load(group_name, ctx=ctx)
+        if group.is_member(ctx.author):
+            await ctx.reply(msg["gjoin_already"])
+            return
+        if len(group.players) >= group.max_players:
+            await ctx.reply(msg["gadd_full"])
+            return
+        if group.is_owner(ctx.author):
+            await ctx.reply(msg["gjoin_owner"])
+            return
+        status, answer = await group.add_player(ctx.author)
+        await ctx.reply(answer)
 
-        if og.is_owner(sanitize(ctx.guild.name), group, ctx.author.id):
-            status, result_str = False, msg["join_own_group"]
-        else:
-            status, result_str = og.add_self(sanitize(ctx.guild.name), group, ctx.author.id)
-
-        if status:
-            # get the role by group name
-            group_role = get(ctx.guild.roles, name=group)
-            await ctx.author.add_roles(group_role)
-            logging.debug(f"Added role {group_role} to user {ctx.author}.")
-            text_channel = ctx.guild.get_channel(og.get_main_channel(sanitize(ctx.guild.name), group))
-            await text_channel.send(msg["gjoin_info"].format(player=ctx.author.id))
-
-        await ctx.reply(result_str)
 
     @command(help=msg["gleave_help"], aliases=['gaustreten'])
     async def gleave(
         self, ctx, 
-        group: str = param(
+        group_name: str = param(
             description=msg["gleave_group"]
         )
     ):
-        # TODO: can we use sanitize() here?
-        group = re.sub('[^0-9a-zA-Z\-_]+', '', group.replace(" ", "-")).lower()
-        status, result_str = og.remove_self(sanitize(ctx.guild.name), group, ctx.author.id)
-
-        if status:
-            group_role = get(ctx.guild.roles, name=group)
-            # removing group role when existing
-            user_roles = ctx.author.roles
-            if group_role in user_roles:  # only remove if role really exists
-                await ctx.author.remove_roles(group_role)
-                logging.debug(f"Removed role {group_role} from user {ctx.author}.")
-            text_channel = ctx.guild.get_channel(og.get_main_channel(sanitize(ctx.guild.name), group))
-            await text_channel.send(msg["gremove_info"].format(player=ctx.author.id))
-
-        await ctx.reply(result_str)
+        group = Group.load(group_name, ctx=ctx)
+        status, answer = await group.remove_player(ctx.author, check_owner=False)
+        await ctx.reply(answer)
 
 
     # TODO: remove and/or make this admin commands only (maybe confirm dialog)

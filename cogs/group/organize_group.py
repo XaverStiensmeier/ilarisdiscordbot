@@ -403,6 +403,9 @@ class Group:
                     msg["group_deleted_info"].format(author=user, group=self)
                 )
         return True, msg["gdestroy_info"].format(group=self)
+    
+    def is_member(self, user: Union[abc.User, int]):
+        return get_id(user) in self.players
 
     def is_owner(self, user: Union[abc.User, int]):
         return get_id(self.owner) == get_id(user)
@@ -514,16 +517,17 @@ class GroupView(BaseView):
     ):
         super().__init__(user, timeout=timeout)
         self.group = group
-        self.interaction = None
-        self.message = None
 
     @button(label=msg["btn_join"], emoji="🍻", style=ButtonStyle.green)
     async def join(self, inter: Interaction, button) -> None:
         if self.group is None:  # should never happen, since group is required now
             status, answer = False, msg["no_group_set"]
+        elif self.group.is_owner(inter.user):
+            status, answer = False, msg["gjoin_owner"]
         else:
-            status, answer = self.group.add_user(inter.user.id)
-        # ephemeral: only the interacting user sees the response.
+            status, answer = await self.group.add_player(inter.user.id)
+        if self.group.message:
+            await self.group.message.edit(content=self.group.info_message, view=self)
         await inter.response.send_message(answer, ephemeral=True)
 
 
@@ -556,9 +560,8 @@ class GroupAdminView(BaseView):
         """destroy a group from button click
         TODO: check permissions, maybe confirm dialog?
         """
-        guild = sanitize(inter.guild.name)
         if not self.group.is_owner(inter.user):
             await inter.response.send_message(msg["not_owner"], ephemeral=True)
             return
-        status, answer = og.destroy_group(guild, self.group, inter.user.id)[:2]
+        status, answer = await self.group.destroy()
         await inter.response.send_message(answer, ephemeral=True)
