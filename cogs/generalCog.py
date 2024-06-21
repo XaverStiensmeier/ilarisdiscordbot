@@ -15,7 +15,7 @@ NAMED_ROLLS = [  # TODO: should this be part of settings?
     ("IIIoo", "2@5d20"), ("IIIo", "2@4d20"), ("Ioo", "1@3d20"), 
     ("Io", "1@2d20"), ("ooIII", "4@5d20"), ("oIII", "3@4d20"), 
     ("ooI", "3@3d20"), ("oI", "2@2d20"), ("III", "2@3d20"), ("I", "1d20")
-]
+] # TODO: should we make them case insensitive?
 
 
 def emojify_number(num):
@@ -73,31 +73,58 @@ class GeneralCommands(commands.Cog):
     @commands.command(help=msg["r_help"], aliases=['w'])
     async def r(self, ctx, 
             roll: str = commands.parameter(default="III", description=msg["r_desc"]),
-            identifier: str = commands.parameter(default="", description="Identifier.")):
+            identifier: str = commands.parameter(default="", description="Identifier."),
+            difficulty: int = commands.parameter(default=None, description="Difficulty.")
+        ):
+        original = ctx.message.content
         roll = roll.replace(" ", "")
         for key, value in NAMED_ROLLS:
             roll = roll.replace(key, value)
-        total_result_str, total_result = parse_die.parse_roll(roll)
-        total_result_text = msg["r_result"].format(
-            author=ctx.author.display_name,
-            identifier=identifier,
-            result=total_result,
-            details=total_result_str
-        )
+        content, total_result, img = parse_die.parse_roll(roll)
+        # total_result_text = msg["r_result"].format(
+        #     author=ctx.author.display_name,
+        #     identifier=identifier,
+        #     result=total_result,
+        #     details=total_result_str
+        # )
         await ctx.message.delete()
-        title = identifier if identifier else "Würfelergebnis"
-        print(total_result)
-        emo_num = emojify_number(total_result)
-        title = emo_num + " " + title
-        if total_result < 12:
-            color = discord.Color.red()
-        elif total_result < 20:
-            color = discord.Color.gold()
-        else:
-            color = discord.Color.green()
-        embed = discord.Embed(title=title, description=total_result_text, color=color)
-        embed.set_thumbnail(url="https://cdn.pixabay.com/photo/2022/04/16/19/39/d20-7136921_1280.png")
-        response = await ctx.send(total_result, embed=embed)
+        # allow passing only difficulty (as first arg)
+        if not difficulty:
+            try:
+                difficulty = int(identifier)
+                identifier = ""
+            except ValueError:
+                pass
+        title = identifier if identifier else "Erfolgswert"
+        # emo_num = emojify_number(total_result)
+        title = f"🎲 {identifier if identifier else msg['r_title']} {total_result}"
+        # TODO: remove this.. we only want colors for given difficulty
+        # ew1, ew2 = 12, 16  # should this be part of settings (ew1, ew2)?
+        # if difficulty is not None:
+        #     ew1, ew2 = difficulty, difficulty
+        # if total_result >= ew2:
+        #     color = discord.Color.green()
+        # elif total_result >= ew1:  # never happens for given difficulty
+        #     color = discord.Color.gold()
+        # else:
+        #     color = discord.Color.red()
+        # content = f"{ctx.author.display_name}: {total_result_str}"
+        color = None
+        if difficulty is not None:
+            if total_result < difficulty:
+                color = discord.Color.red()
+                content += f"\n\n🚫 {msg['r_fail']}"
+            else:
+                color = discord.Color.green()
+                content += f"\n\n✅ {msg['r_success']}"
+            content += f" ({msg['r_difficulty']}: {difficulty})"
+        embed = discord.Embed(title=title, description=content, color=color)
+        img_url = f"https://ilaris-online.de/static/bilder/d20s/default.png"
+        if img is not None:
+            # pick d20 img
+            img_url = f"https://ilaris-online.de/static/bilder/d20s/{img}.png"
+        embed.set_thumbnail(url=img_url)
+        response = await ctx.send(f"<@{ctx.author.id}>: {ctx.message.content}", embed=embed)
         # await response.delete(delay=300)
         await response.add_reaction("❌")
 

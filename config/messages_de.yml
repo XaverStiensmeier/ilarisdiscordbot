@@ -13,6 +13,8 @@ card_help: "Postet ein Bild einer bestimmten Regelkarte."
 card_desc: "Name der Regelkarte"
 card_best_matches: "Die drei besten Übereinstimmungen sind: {best}"
 
+# Erfolgswert (EW): Wurf + PW + Mod
+# Probenwert (PW): ggf. zählt PWT
 r_help: |
   Würfelt mit Würfeln.
   2d6+3: Addiert das Ergebnis von 2 6-seitigen Würfeln und 3.
@@ -26,6 +28,10 @@ r_result: |
   # {author} --- {identifier} {result}
   Details: {details}
   ```
+r_title: "Ergebnis"
+r_success: "Erfolg"
+r_fail: "Fehlschlag"
+r_difficulty: "Schwierigkeit"
 
 group_prefix: "Deine Gruppe (ohne Benutzername)"
 
