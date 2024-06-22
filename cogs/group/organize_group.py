@@ -606,5 +606,5 @@ class GroupSelect(Select):
         group = Group.load(slug, inter=inter, guild_id=int(guild_id))
         content = msg["group_invite"].format(user=inter.user)
         content += "\n" + group.info_message
-        group.message = await self.target.send(content, view=group.info_view(inter.user))
+        group.message = await self.target.send(content, view=group.info_view(self.target))
 
