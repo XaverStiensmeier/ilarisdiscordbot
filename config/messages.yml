@@ -142,6 +142,11 @@ gaddchannel_voice: "If True, a voice channel is created. Else a text channel."
 gaddchannel_created_voice: "Created voice channel!"
 gaddchannel_created_text: "Created text channel!"
 
+bug_reported: "Issue has been reported to the devs. Thank you!"
+bug_nodev: "Sorry, could not report the bug. I don't know my developers."
+
+group_invite: "<@{user.id}> invites you to join a group."
+
 # errors:
 cmd_not_found: "Command not found. See `!help` for all commands."
 bad_args: "Correct Usage: {pre}{cmd} {sig}"

@@ -127,10 +127,3 @@ class GeneralCommands(commands.Cog):
         response = await ctx.send(f"<@{ctx.author.id}>: {ctx.message.content}", embed=embed)
         # await response.delete(delay=300)
         await response.add_reaction("❌")
-
-    # TODO: allow sending files only for specific user ids
-    # @commands.command(help="Admin only: Gets debug information", hidden=True)
-    # @commands.has_permissions(administrator=True)
-    # async def what(self, ctx):
-    #     await ctx.author.send(file=discord.File(bp.djoin("discord.log")))
-    #     await ctx.author.send(file=discord.File(bp.djoin("groups.yml")))

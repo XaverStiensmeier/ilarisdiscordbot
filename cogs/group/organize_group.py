@@ -24,7 +24,7 @@ from discord import (
     ButtonStyle,
     Client,
 )
-from discord.ui import TextInput, button
+from discord.ui import TextInput, button, Select
 from discord.ext.commands import Context
 
 from utility.sanitizer import sanitize
@@ -150,7 +150,9 @@ class Group:
         if inter:
             self.inter = inter
             self.member = inter.user
-            self.guild = inter.guild.id
+            # guild not set in all cases (i.e. rightclick menu click)
+            if not self.guild:
+                self.guild = inter.guild.id
             self.bot: Client = inter.client
         elif ctx:
             self.ctx = ctx
@@ -175,7 +177,8 @@ class Group:
             guild_id = ctx.guild.id if ctx else inter.guild.id
         slug = sanitize(name)
         print(slug, guild_id)
-        data = guilds.get(guild_id, {}).get(slug)
+        data = guilds.get(guild_id, {}).get(slug, {})
+        print(data)
         if "slug" in data:
             data.pop("slug")  # do we want slug as part of dict/field or just key?
         if not data:
@@ -204,6 +207,21 @@ class Group:
             await self.inter.user.add_roles(role)
         for p in self.players:
             await guild.get_member(p).add_roles(role)
+    
+    @classmethod
+    def groups_of_user(cls, user: Union[abc.User, int], owner: bool = False):
+        """Returns all groups of a user.
+        NOTE: this method would be obsolete for a relational database.
+        """
+        user_id = get_id(user)
+        groups = []
+        for guild_id, guild_data in guilds.items():
+            for group_data in guild_data.values():
+                if not owner and user_id in group_data["players"]:
+                    groups.append(cls(**group_data))
+                elif owner and user_id == group_data["owner"]:
+                    groups.append(cls(**group_data))    
+        return groups
 
     async def create_channels(self, welcome=True):
         """Creates channels for the group."""
@@ -565,3 +583,28 @@ class GroupAdminView(BaseView):
             return
         status, answer = await self.group.destroy()
         await inter.response.send_message(answer, ephemeral=True)
+
+
+
+class GroupSelect(Select):
+    def __init__(self, user, target):
+        groups = Group.groups_of_user(user, owner=True)
+        # TODO: flatten the group data and remove guild from value
+        options = [discord.SelectOption(label=g.name, value=f"{g.guild};{g.slug}") for g in groups]
+        if len(options) == 0:
+            options = [discord.SelectOption(label="No groups", value="none")]
+        elif len(options) > 25:
+            options = options[:25]
+        self.target = target
+        super().__init__(placeholder="Choose a group...", min_values=1, max_values=1, options=options)
+    
+    async def callback(self, inter: discord.Interaction) -> None:
+        # TODO: flatten the group data and remove guild from value
+        guild_id, slug = inter.data['values'][0].split(";")
+        await inter.response.defer()
+        await inter.followup.send(f"Selected {slug}", ephemeral=True)
+        group = Group.load(slug, inter=inter, guild_id=int(guild_id))
+        content = msg["group_invite"].format(user=inter.user)
+        content += "\n" + group.info_message
+        group.message = await self.target.send(content, view=group.info_view(inter.user))
+

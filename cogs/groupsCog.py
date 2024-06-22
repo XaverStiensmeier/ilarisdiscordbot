@@ -3,6 +3,7 @@ import logging
 import re
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context, Bot, param, Cog, command
 from discord.utils import get
@@ -12,6 +13,7 @@ from cogs.group import organize_group as og
 from cogs.group.organize_group import Group
 from utility.sanitizer import sanitize
 from cogs.group.organize_group import NewGroupView
+from views.base import BaseView
 
 
 class GroupCommands(Cog):
@@ -181,32 +183,3 @@ class GroupCommands(Cog):
         group = Group.load(group_name, ctx=ctx)
         status, answer = await group.remove_player(ctx.author, check_owner=False)
         await ctx.reply(answer)
-
-
-    # TODO: remove and/or make this admin commands only (maybe confirm dialog)
-    @command()
-    async def removeallchannels(self, ctx):
-        for channel in ctx.guild.channels:
-            await channel.delete()
-    
-    @command()
-    async def removeallroles(self, ctx):
-        for role in ctx.guild.roles:
-            try:
-                await role.delete()
-            except:
-                pass
-    
-    # TODO: should be admin and/or GM command?
-    @command()
-    async def gadd(self, ctx, group: str, player: discord.Member):
-        group = Group.load(group, ctx=ctx)
-        await group.add_player(player.id)
-        await ctx.reply(f"Added <@{player.id}> to {group.name}")
-        
-
-    # TODO: should be admin command:
-    @command()
-    async def reload_data(self, ctx):
-        og.load_data()
-        await ctx.reply("Data reloaded.")

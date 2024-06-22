@@ -10,8 +10,10 @@ import config
 from config import DATA
 from config import messages as msg
 from cogs.generalCog import GeneralCommands
-from cogs.group import organize_group
+from cogs.group.organize_group import GroupSelect
 from cogs.groupsCog import GroupCommands
+from cogs.adminCog import AdminCog
+from views.base import BaseView
 from utility.sanitizer import sanitize
 
 import typing
@@ -47,6 +49,8 @@ async def on_ready():
     print('Bot ID: {}'.format(bot.user.id))
     await bot.add_cog(GeneralCommands(bot))
     await bot.add_cog(GroupCommands(bot))
+    await bot.add_cog(AdminCog(bot))
+    await bot.tree.sync()  # sync command tree with discord api
 
 @bot.event
 async def on_message(ctx):
@@ -113,5 +117,34 @@ async def on_reaction_add(reaction, user):
         # Delete the message
         await reaction.message.delete()
 
+
+async def setup_hook() -> None:  # This function is automatically called before the bot starts
+    await bot.tree.sync()   # This function is used to sync the slash commands with Discord it is mandatory if you want to use slash commands
+
+
+# NOTE: no app command to manually resync app commands
+@bot.command()
+async def sync(ctx: commands.Context) -> None:
+    """Sync commands"""
+    synced = await ctx.bot.tree.sync()
+    await ctx.send(f"Synced {len(synced)} commands globally")
+
+@bot.tree.context_menu(name="invite")
+async def invite(inter: discord.Interaction, member: discord.Member) -> None:
+    embed = discord.Embed(title=member.name, description=f"{member.mention} is cool", color=member.color)
+    embed.set_thumbnail(url=member.display_avatar)
+    print("invite pressed")
+    # groups = Group.groups_of_user(inter.user, owner=True)
+    # print([g.name for g in groups])
+    # print(groups)
+    # menu = InviteMenu(inter.user)
+    menu = BaseView(inter.user)
+    menu.add_item(GroupSelect(inter.user, member))
+    await inter.response.send_message(embed=embed, view=menu)
+
+@bot.tree.context_menu(name="promote")
+async def promote(inter: discord.Interaction, member: discord.Member) -> None:
+    print("promote pressed")
+    await inter.response.send_message(f"Promoted {member.mention}")
 
 bot.run(config.settings["token"], log_handler=None)
