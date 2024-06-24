@@ -224,7 +224,7 @@ class Group:
             ),
         }
         category = await guild.create_category(name=self.name, overwrites=permissions)
-        logging.error("Created category: %s", category.id)
+        logging.info("Created category: %s", category.id)
         self.category = category.id  # save category id
         text = await guild.create_text_channel(
             name="Text", overwrites=permissions, category=category
