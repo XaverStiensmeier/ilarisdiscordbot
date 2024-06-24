@@ -197,3 +197,4 @@ data
 *.lock
 *.zip
 config/settings.yml
+config/settings_*.yml
