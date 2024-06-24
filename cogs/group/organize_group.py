@@ -501,6 +501,11 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
                 date=self.date.value,
                 inter=inter,
             )
+            if group.exists:  # TODO: move this check to Group.create()?
+                await inter.response.send_message(
+                    msg["gcreate_group_exists"].format(name=group.name), 
+                    ephemeral=True)
+                return
             group.save()  # write to yaml
             await group.setup_guild()  # channels and roles etc..
             await inter.response.send_message(msg["submit_success"], ephemeral=True)
