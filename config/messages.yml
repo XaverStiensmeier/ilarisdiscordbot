@@ -52,7 +52,6 @@ gcreate_success: |
   Add channels: `!gaddchannel {group.slug} <channel_name>`. (GM only)
   Delete group: `!gdestroy {group.slug}` (GM only).
   Join as Players: `!gjoin {group.slug}`
-submit_success: ":white_check_mark: Group created!"
 name_ph: Group name
 name_la: Name
 date_ph: Date or time
