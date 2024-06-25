@@ -56,7 +56,9 @@ class GroupCommands(Cog):
             return
         await group.setup_guild()  # create role, category and channels
         group.save()  # writes to yaml
-        await ctx.reply(msg["gcreate_success"].format(group=group), ephemeral=True)
+        content = msg["gcreate_success"].format(group=group)
+        buttons = group.info_view(ctx.author)
+        group.message = await ctx.reply(content, view=buttons)
 
     @gcreate.error
     async def gcreate_error(self, ctx, error):

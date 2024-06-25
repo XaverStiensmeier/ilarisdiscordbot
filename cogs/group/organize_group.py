@@ -242,7 +242,7 @@ class Group:
             ),
         }
         category = await guild.create_category(name=self.name, overwrites=permissions)
-        logging.error("Created category: %s", category.id)
+        logging.info("Created category: %s", category.id)
         self.category = category.id  # save category id
         text = await guild.create_text_channel(
             name="Text", overwrites=permissions, category=category
@@ -519,15 +519,24 @@ class GroupModal(BaseModal, title="Neue Gruppe"):
                 date=self.date.value,
                 inter=inter,
             )
+            if group.exists:  # TODO: move this check to Group.create()?
+                await inter.response.send_message(
+                    msg["gcreate_group_exists"].format(name=group.name), 
+                    ephemeral=True)
+                return
             group.save()  # write to yaml
             await group.setup_guild()  # channels and roles etc..
-            await inter.response.send_message(msg["submit_success"], ephemeral=True)
+            content = msg["gcreate_success"].format(group=group)
+            buttons = group.info_view(inter.user)
+            group.message = await inter.response.send_message(content, view=buttons)
 
 
 class GroupView(BaseView):
     """Group detail View, providing [join], [leave] buttons
     This view can be attached to a a group info message and provides buttons.
     Add it to a message with `ctx.reply(message, view=GroupView(user, group))`.
+    view.user is the user who created the message. 
+    inter.user is the one who clicks the button.
     """
 
     def __init__(
