@@ -1,5 +1,6 @@
 import logging
 import discord
+from datetime import datetime
 from discord import app_commands, Interaction
 from discord.ext import commands
 from discord.ui import TextInput
@@ -12,10 +13,8 @@ from views.base import BaseModal
 def devs_only(func):
     """Decorator to restrict interactions to users with id in settings['developers'].
     """
-    print("WRAPPING SOMETHING")
     @wraps(func)
     async def wrapper(self, inter):
-        print("CHECKING DEV PERMISSION")
         if inter.user.id not in settings.get("developers", []):
             await inter.response.send_message("Permission denied.", ephemeral=True)
             return
@@ -37,9 +36,15 @@ class AdminCog(commands.Cog):
     @group.command(name="reload", description="Reloads data from file.")
     @devs_only
     async def reload(self, inter):
-        print("RELOADING")
         og.load_data()
         await inter.response.send_message("Data reloaded.")
+    
+    @group.command(name="backup", description="Backup data to file with current date.")
+    @devs_only
+    async def backup(self, inter):
+        date = datetime.now().strftime("%Y%m%d_%H%M%S")
+        og.write_yaml(fname=DATA/f"guilds_{date}.yml")
+        await inter.response.send_message("Data backed up.")
 
     @group.command(name="download", description="Dev: Download log file and guilds.yml")
     @devs_only

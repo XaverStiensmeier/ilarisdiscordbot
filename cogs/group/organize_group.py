@@ -42,9 +42,9 @@ from functools import wraps
 data_file = DATA / "guilds.yml"
 
 
-def write_yaml():
-    with open(data_file, "w+") as file:
-        with FileLock("groups.yml.lock"):
+def write_yaml(fname=data_file):
+    with open(fname, "w+") as file:
+        with FileLock("guilds.yml.lock"):
             yaml.safe_dump(guilds, file)
 
 
