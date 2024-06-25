@@ -13,6 +13,7 @@ from cogs.generalCog import GeneralCommands
 from cogs.group.organize_group import GroupSelect
 from cogs.groupsCog import GroupCommands
 from cogs.adminCog import AdminCog
+from cogs.onlineCog import OnlineCog
 from views.base import BaseView
 from utility.sanitizer import sanitize
 
@@ -50,6 +51,7 @@ async def on_ready():
     await bot.add_cog(GeneralCommands(bot))
     await bot.add_cog(GroupCommands(bot))
     await bot.add_cog(AdminCog(bot))
+    await bot.add_cog(OnlineCog(bot))
     await bot.tree.sync()  # sync command tree with discord api
 
 @bot.event
@@ -91,9 +93,9 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_command_completion(ctx):
-    log.info("'{}' used '{}' on '{}' in '{}'".format(
-        ctx.author, ctx.message.content, ctx.guild.name, ctx.channel
-    ))
+    if ctx.guild:
+        msg = "'{author}' used '{message.content}' on '{guild.name}' in '{channel}'"
+        log.info(msg.format(**ctx))
     if (ctx.command.cog_name == "GroupCommands" 
         and ctx.command.name not in NO_UPDATE_COMMAND_LIST):
         channel = discord.utils.get(ctx.guild.text_channels,

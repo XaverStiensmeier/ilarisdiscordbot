@@ -50,7 +50,7 @@ class GeneralCommands(commands.Cog):
                 await ctx.reply(msg["page_limit"])
         else:
             await ctx.reply(ilaris_database.get_database_entry(name=arg))
-
+    
     @commands.command(help=msg["card_help"], aliases=['karte'])
     async def card(self, ctx, arg: str = commands.parameter(description=msg["card_desc"])):
         name, three_best = differ.closest_match(arg, cards)

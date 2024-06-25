@@ -31,8 +31,7 @@ class AdminCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-    
-    # @group.command(name="reload", description="Reloads data from file.")
+
     @group.command(name="reload", description="Reloads data from file.")
     @devs_only
     async def reload(self, inter):
