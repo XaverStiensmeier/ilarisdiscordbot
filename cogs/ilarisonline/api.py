@@ -1,7 +1,7 @@
 import aiohttp
 import json
 from discord.ext import commands
-from discord import Embed
+
 
 class Client:
     """Client to interact with the Ilaris Online API.
@@ -16,34 +16,27 @@ class Client:
         }
         self.session = aiohttp.ClientSession()
     
-    async def get(self, endpoint):
+    async def auto_close(self, close):
+        """Call on end of each request to make closing sessions more convenient."""
+        if close:
+            await self.session.close()
+    
+    async def get(self, endpoint, close=True):
         """GET request to the API."""
-        print("get")
+        print("get", endpoint)
         url = f"{self.base_url}/{endpoint}"
         async with self.session.get(url, headers=self.headers) as response:
             if response.status != 200:
+                await self.auto_close(close)
                 response.raise_for_status()  # raise exception by status code of api
-            print("respond")
-            return await response.json()
+            data = await response.json()
+        await self.auto_close(close)
+        return data
     
-
     async def search_kreatur(self, search):
+        """Uses api search (name and desc). returns list of matches from database.
+        # TODO: create a custom api view with only name/id to save some traffic
+        """
         data = await self.get(f"ilaris/kreatur/?search={search}")
-        # NOTE: discord fails for content > 2000 chars
-        # TODO: create a custom api view for this to save some traffic
         short_data = [{"id": data["id"], "name": data["name"]} for data in data]
-        print(short_data)
         return short_data
-    
-
-    async def kreatur_embed(self, id, close=True):
-        data = await self.get(f"ilaris/kreatur/{id}")
-        print(data)
-        embed = Embed(
-            title=data["name"],
-            # description=data["description"],
-            # color=discord.Color.green()
-        )
-        if close:
-            self.session.close()
-        return embed

@@ -1,11 +1,11 @@
 
 import logging
 import discord
-from discord import app_commands, Interaction, SelectMenu, SelectOption
+from discord import app_commands
 from discord.ext import commands
-from discord.ui import TextInput, Select, View
 from config import DATA, settings, messages as msg
 from cogs.ilarisonline.api import Client
+from ui.views import KreaturSelect, kreatur_embed
 
 
 class OnlineCog(commands.Cog):
@@ -26,12 +26,13 @@ class OnlineCog(commands.Cog):
         api = Client()
         if not kid:  # search for kreatur by name
             matches = await api.search_kreatur(suche)
+            if len(matches) == 0:
+                await inter.response.send_message("Hab leider nichts gefunden.", ephemeral=True)
+                return
             if len(matches) == 1:
                 kid = matches[0]["id"]
             elif len(matches) > 1:
-                print(matches)
-                view = View()
-                view.add_item(KreaturSelect(inter, matches))
+                view = KreaturSelect(inter, matches).as_view()
                 await inter.response.send_message(
                     f"Es gibt mehrere Treffer:\n",
                     view=view,
@@ -39,23 +40,9 @@ class OnlineCog(commands.Cog):
                 )
                 return
         # answer kreatur by id
-        embed = await api.kreatur_embed(kid)
-        await inter.response.send_message("Da: ", embed=embed)
+        data = await api.get(f"ilaris/kreatur/{kid}")
+        embed = kreatur_embed(data)
+        await inter.response.send_message("", embed=embed)
         return
 
 
-class KreaturSelect(Select):
-    def __init__(self, inter, creatures):
-        self.inter = inter
-        options = [SelectOption(label=c['name'], value=c['id']) for c in creatures]
-        super().__init__(
-            placeholder="Choose a creature...",
-            min_values=1, max_values=1, options=options)
-    
-    async def callback(self, inter: discord.Interaction) -> None:
-        # await inter.response.defer() # processing it wihtout sending reply
-        c_id = inter.data['values'][0]
-        api = Client()
-        embed = await api.kreatur_embed(c_id)
-        await inter.response.send_message("", embed=embed)  # followup to avoid quote
-        # await self.inter.response.delete_message()
