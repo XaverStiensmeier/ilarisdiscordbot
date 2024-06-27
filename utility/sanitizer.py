@@ -11,6 +11,7 @@ def cap(s, l=1024):
     """
     if not s:
         return "" 
+    s = str(s)
     if len(s) > l:
         return s[:(l-4)] + "..."
     return s

@@ -1,4 +1,5 @@
 import aiohttp
+from aiohttp import ClientTimeout
 import json
 from discord.ext import commands
 
@@ -13,7 +14,8 @@ class Client:
         self.headers = {
             "Content-Type": "application/json",
         }
-        self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession(timeout=ClientTimeout(total=60))
+        # TODO: close the initial session if no mehtod is called?
     
     def ensure_session(self):
         """Creates new session if none is open anymore"""
