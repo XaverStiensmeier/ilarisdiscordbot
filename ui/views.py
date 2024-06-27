@@ -29,6 +29,7 @@ def kreatur_embed(data, as_view=False):
         embed = Embed(
             title=data["name"],
             description=cap(data["kurzbeschreibung"]),
+            url=f"https://ilaris-online.de/app/kreatur/{data['id']}",
         )
         embed.set_thumbnail(url=f"https://ilaris-online.de/static/bilder/kreaturen/{data['typ']}.png")
         # EIGENSCHAFTEN
