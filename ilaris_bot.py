@@ -10,13 +10,19 @@ import config
 from config import DATA
 from config import messages as msg
 from cogs.generalCog import GeneralCommands
-from cogs.group import organize_group
+from cogs.group.organize_group import GroupSelect
 from cogs.groupsCog import GroupCommands
+from cogs.adminCog import AdminCog
+from views.base import BaseView
 from utility.sanitizer import sanitize
+
+import typing
 
 # TODO: not sure where this belongs:
 NO_UPDATE_COMMAND_LIST = ["glist"]
 
+cfg = config  # TODO remove me
+msg = cfg.messages
 
 handler = logging.handlers.RotatingFileHandler(
     filename=DATA/'discord.log', 
@@ -24,13 +30,9 @@ handler = logging.handlers.RotatingFileHandler(
     maxBytes=32 * 1024 * 1024,  # 32 MiB
     backupCount=5,  # Rotate through 5 files
 )
-
-logging.basicConfig(
-    level=logging.DEBUG, 
-    format='%(asctime)s.%(msecs)03d %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S', 
-    handlers=[handler]
-)
+formatter = logging.Formatter("%(asctime)s.%(msecs)03d %(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
+handler.setFormatter(formatter)
+log = logging.getLogger('discord')
 
 # NOTE: all mentions are disabled by default (links work but without ping)
 bot = commands.Bot(
@@ -47,11 +49,22 @@ async def on_ready():
     print('Bot ID: {}'.format(bot.user.id))
     await bot.add_cog(GeneralCommands(bot))
     await bot.add_cog(GroupCommands(bot))
+    await bot.add_cog(AdminCog(bot))
+    await bot.tree.sync()  # sync command tree with discord api
 
+@bot.event
+async def on_message(ctx):
+    try:
+        await bot.process_commands(ctx)
+    except Exception as e:
+        print(e)
+        log.error(e)
 
 @bot.event
 async def on_command_error(ctx, error):
-    logging.info(traceback.format_exc())
+    if ctx.command and ctx.command.has_error_handler():
+        return  # Do not handle commands that have their own handler
+    logging.debug(traceback.format_exc())
     if isinstance(error, commands.CommandNotFound):
         response = config.commands.get(ctx.invoked_with, {}).get("reply")
         if response:
@@ -59,8 +72,11 @@ async def on_command_error(ctx, error):
             return
         else:
             await ctx.send(msg["cmd_not_found"])
-    elif isinstance(error, commands.errors.MissingRequiredArgument) or \
-        isinstance(error, commands.errors.BadArgument):
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        await ctx.send(msg["bad_args"].format(
+            pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature
+        ))
+    elif isinstance(error, commands.errors.BadArgument):
         await ctx.send(msg["bad_args"].format(
             pre=ctx.prefix, cmd=ctx.command.name, sig=ctx.command.signature
         ))
@@ -70,12 +86,12 @@ async def on_command_error(ctx, error):
         else:
             info = msg["unexpected_error"]
         await ctx.send(msg["cmd_failed"].format(info=info))
-    raise error
+        raise error
 
 
 @bot.event
 async def on_command_completion(ctx):
-    logging.info("'{}' used '{}' on '{}' in '{}'".format(
+    log.info("'{}' used '{}' on '{}' in '{}'".format(
         ctx.author, ctx.message.content, ctx.guild.name, ctx.channel
     ))
     if (ctx.command.cog_name == "GroupCommands" 
@@ -87,11 +103,12 @@ async def on_command_completion(ctx):
             for result_str in organize_group.list_groups(sanitize(ctx.guild.name)):
                 await channel.send(result_str)
         else:
-            logging.info("No group channel found.")
+            log.info("No group channel found.")
 
 
 @bot.event
 async def on_reaction_add(reaction, user):
+    log.warning("Reaction added")
     # Check if the reaction is on the bot's message and the emoji is the delete emoji
     if (reaction.message.author == bot.user 
         and reaction.emoji == "❌" 
@@ -101,4 +118,33 @@ async def on_reaction_add(reaction, user):
         await reaction.message.delete()
 
 
-bot.run(config.settings["token"])  # , log_handler=handler
+async def setup_hook() -> None:  # This function is automatically called before the bot starts
+    await bot.tree.sync()   # This function is used to sync the slash commands with Discord it is mandatory if you want to use slash commands
+
+
+# NOTE: no app command to manually resync app commands
+@bot.command()
+async def sync(ctx: commands.Context) -> None:
+    """Sync commands"""
+    synced = await ctx.bot.tree.sync()
+    await ctx.send(f"Synced {len(synced)} commands globally")
+
+@bot.tree.context_menu(name="invite")
+async def invite(inter: discord.Interaction, member: discord.Member) -> None:
+    embed = discord.Embed(title=member.name, description=f"{member.mention} is cool", color=member.color)
+    embed.set_thumbnail(url=member.display_avatar)
+    print("invite pressed")
+    # groups = Group.groups_of_user(inter.user, owner=True)
+    # print([g.name for g in groups])
+    # print(groups)
+    # menu = InviteMenu(inter.user)
+    menu = BaseView(inter.user)
+    menu.add_item(GroupSelect(inter.user, member))
+    await inter.response.send_message(embed=embed, view=menu)
+
+@bot.tree.context_menu(name="promote")
+async def promote(inter: discord.Interaction, member: discord.Member) -> None:
+    print("promote pressed")
+    await inter.response.send_message(f"Promoted {member.mention}")
+
+bot.run(config.settings["token"], log_handler=None)
