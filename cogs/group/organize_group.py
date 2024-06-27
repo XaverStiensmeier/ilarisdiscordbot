@@ -1,46 +1,75 @@
 #!/usr/bin/env python3
-# Imports
+"""
+I would like to turn this completly into a Group (and maybe GroupManager) class.
+Most of the methods can probably turned into methods very simpple and makes it a lot
+easier to use and maintain. Views and Modals could also be generated from a group class
+instead of having their own classes. Read more: #75
+"""
 import signal
 import sys
 import os
 import logging
-
-from filelock import FileLock
 import yaml
+import discord
+import asyncio
+from filelock import FileLock
+from dataclasses import asdict, dataclass
+from dataclasses import InitVar, field
+from typing import Union
+from discord import abc  # discords base classes
+from discord import (
+    Interaction,
+    PermissionOverwrite,
+    Interaction,
+    ButtonStyle,
+    Client,
+)
+from discord.ui import TextInput, button, Select
+from discord.ext.commands import Context
+
+from utility.sanitizer import sanitize
 from config import DATA
+from config import messages as msg
+from views.base import BaseModal, BaseView
+from utility.sanitizer import sanitize
+from config import messages as msg
+from functools import wraps
 
-# TODO: move to config.constants or config.messages
-PLAYER_NUMBER = "player_number"
-PLAYER_NUMBER_PRINT = "Spielerzahl"
-DATE = "date"
-DATE_PRINT = "Datum"
-DESCRIPTION = "description"
-DESCRIPTION_PRINT = "Beschreibung"
-PLAYER = "player"
-PLAYER_PRINT = "Beschreibung"
-GROUPS_PATH = DATA/"groups.yml"
-CHANNELS = "channels"
-CATEGORY = "category"
-OWNER = "owner"
+# module level functions and variables (cache).
 
-HOW_TO_JOIN = """
-Wo du beitreten möchtest, kopiere den Teil mit `!gjoin` und sendet diese Zeile dann in #bot-spam. 
-Der Bot sorgt automatisch für die Zuordnung :wink:
+# root level of the file are server, we could also save server specific data in the same
+# file, so I renamed it to guilds.yml.
+data_file = DATA / "guilds.yml"
 
-Bei Schwierigkeiten, einfach fragen. Wir helfen, wo wir können!
-_ _
-"""
+
+def write_yaml(fname=data_file):
+    with open(fname, "w+") as file:
+        with FileLock("guilds.yml.lock"):
+            yaml.safe_dump(guilds, file)
 
 
 def save_yaml(original_function):
-    def wrapper(guild, *args, **kwargs):
-        result = original_function(guild, *args, **kwargs)
-        with open(GROUPS_PATH, "w+") as file:
-            logging.debug(f"Saving triggered by {guild}...")
-            with FileLock("groups.yml.lock"):
-                yaml.safe_dump(groups, file)
+    """Decorator to save yaml file after function call.
+    after a function decorated with this, the guilds dict is written to yaml file.
+    The wrapper works for both async and sync functions.
+    """
+
+    @wraps(original_function)
+    def wrapper(*args, **kwargs):
+        result = original_function(*args, **kwargs)
+        write_yaml()
         return result
-    return wrapper
+
+    @wraps(original_function)
+    async def async_wrapper(*args, **kwargs):
+        result = await original_function(*args, **kwargs)
+        write_yaml()
+        return result
+
+    if asyncio.iscoroutinefunction(original_function):
+        return async_wrapper
+    else:
+        return wrapper
 
 
 @save_yaml
@@ -51,175 +80,545 @@ def sigterm_handler(_signo, _stack_frame):
 signal.signal(signal.SIGINT, sigterm_handler)
 signal.signal(signal.SIGTERM, sigterm_handler)
 
-groups = {}
-
-ALLOWED_KEYS = [DATE, PLAYER_NUMBER, DESCRIPTION]
-
 # LOAD GROUPS
-if os.path.isfile(GROUPS_PATH):
-    with open(GROUPS_PATH, "r") as yaml_file:
-        groups = yaml.safe_load(yaml_file) or {}
-# TODO: else log error?
+guilds = {}  # TODO: this could become a class variable instead of module level
 
 
-def is_owner(guild, group, author_id):
-    group_data = groups.get(guild, {}).get(group)
-    return group_data[OWNER] == author_id
-
-
-@save_yaml
-def list_groups(guild, show_full=False):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    return_str = HOW_TO_JOIN
-    return_str += "**\- Gruppen Liste -**\n"
-    return_strs = [return_str]
-    for group, daten in guild_groups.items():
-        return_str = ""
-        if show_full or len(daten[PLAYER]) < int(daten[PLAYER_NUMBER]):
-            return_str += f"**{group.replace('-', ' ').title()}**\n"
-            return_str += f"{daten[DESCRIPTION]}\n"
-            return_str += f"**Spielleitung: <@{daten[OWNER]}>**\n"
-            return_str += f"**{DATE_PRINT}**: {daten[DATE]}\n"
-            return_str += f"**{PLAYER_NUMBER_PRINT}**: {len(daten[PLAYER])}/{daten[PLAYER_NUMBER]}\n"
-            return_str += f"**Zum Beitreten**: `!gjoin {group}`\n\n"
-            return_str += "_ _"
-            return_strs.append(return_str)
-    return return_strs
-
-
-@save_yaml
-def create_group(guild, group, owner, category, date, player_number=4, description=""):
-    groups.setdefault(guild, {})
-    groups[guild][group] = {
-        OWNER: owner, CATEGORY: category, DATE: date, PLAYER_NUMBER: player_number,
-        DESCRIPTION: description, PLAYER: [], CHANNELS: []}
-    return_str = f"Neue Gruppe {group} angelegt.\n"
-    return_str += f"Zum Channel hinzufügen: `!gaddchannel {'_'.join(group.split('_')[:-1])} new_channel`.\n"
-    return_str += f"Zum Gruppe entfernen: `!gdestroy {'_'.join(group.split('_')[:-1])}`\n"
-    return_str += f"Zum Beitreten: `!gjoin {group}`\n\n"
-    return return_str
-
-
-def group_exists(guild, group):
-    return groups.get(guild) and groups[guild].get(group)
-
-
-@save_yaml
-def destroy_group(guild, group, author=None):
-    group_data = groups.get(guild, {}).get(group)
-    if group_data is None:
-        return False, "Die Gruppe existiert nicht.", [], [], []
-    if author and group_data[OWNER] != author:
-        return False, "Du bist nicht der Besitzer der Gruppe.", [], [], []
-    group_dict = groups[guild].pop(group)
-    return 1, "Die Gruppe wurde gelöscht.", group_dict[PLAYER], group_dict[CHANNELS], group_dict[CATEGORY]
-
-
-def get_main_channel(guild, group):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    if guild_groups.get(group):
-        return guild_groups[group][CHANNELS][0]
-    return None
-
-
-@save_yaml
-def set_key(guild, group, key, value):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    if guild_groups.get(group):
-        if key in ALLOWED_KEYS:
-            guild_groups[group][key] = value
-            return f"{key}: '{value}' wurde gesetzt"
-        else:
-            return f"{key} konnte nicht gesetzt werden."
+def load_data():
+    if os.path.isfile(data_file):
+        with open(data_file, "r") as yaml_file:
+            data = yaml.safe_load(yaml_file) or {}
+            guilds.clear()  # change inplace after loading
+            guilds.update(data)
     else:
-        return f"Gruppe {group} existiert nicht."
+        logging.warning("No guilds file found. Trying to create one next save.")
 
 
-@save_yaml
-def remove_player(guild, group, player):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    if guild_groups.get(group):
-        if player in guild_groups[group][PLAYER]:
-            guild_groups[group][PLAYER].remove(player)
-            return True, f"Spieler <@{player}> wurde entfernt."
+load_data()
+
+
+def get_id(object):
+    """utility function to get id from discord object or string"""
+    if object is None:
+        return object
+    if isinstance(object, str) or isinstance(object, int):
+        return int(object)
+    return object.id
+
+
+@dataclass
+class Group:
+    """This class makes all group data and ui elements easy accessible and provides
+    convenient methods to interact with the group. It's primarily used from within group
+    commands and views. Most attributes of this class directly map to their dictionary 
+    repr or json strings and are validated on the fly thanks to @dataclass:
+    https://docs.python.org/3/library/dataclasses.html
+    The decorator adds some default methods like __init__, __repr__ and allows
+    serialization to dict and json. All class variables below can be used as kw_args
+    in the constructor.. for example `my_group = Group(name="My Name", ctx=ctx)` will
+    create an instance where guild .
+    However, some methods require some context (who called it, in which guild etc..)
+    this context (or interaction) is processed in the post_init method, thats called
+    after the actual init, generated from @dataclass. Methods use ids of discord objects
+    when possible to avoid unnecessary calls to discord API. The methods that require
+    such calls are usually async (i.e. setup_roles, create_channels).
+    """
+
+    # context (initvars will be skipped in serialization)
+    inter: InitVar[Interaction] = None
+    ctx: InitVar[Context] = None
+    member: InitVar[abc.User] = None
+    bot: InitVar[discord.Client] = None  # required to create roles/channels
+    # serialized (standard dataclass fields)
+    name: str = None
+    guild: int = None
+    owner: int = None
+    date: str = ""
+    description: str = ""
+    max_players: int = 4
+    category: int = None
+    role: int = None
+    players: list = field(default_factory=list)
+    channel: int = None  # default channel
+    # static
+    guilds: InitVar[dict] = guilds  # reference to the global guilds dict (??)
+
+    def __post_init__(self, inter, ctx, member, bot: discord.Client, guilds):
+        """Post init function to set context and user from initvars."""
+        self.guilds = guilds
+        self.slug = sanitize(self.name)
+        if inter:
+            self.inter = inter
+            self.member = inter.user
+            # guild not set in all cases (i.e. rightclick menu click)
+            if not self.guild:
+                self.guild = inter.guild.id
+            self.bot: Client = inter.client
+        elif ctx:
+            self.ctx = ctx
+            self.member = ctx.author
+            self.guild = ctx.guild.id
+            self.bot: Client = ctx.bot
         else:
-            return False, f"Spieler <@{player}> ist nicht in Gruppe {group}."
-    else:
-        return False, f"Gruppe {group} existiert nicht."
+            if member:
+                self.member = member
+            if bot:
+                self.bot = bot
 
+    @classmethod
+    def load(cls, name, ctx=None, inter=None, guild_id=None, create=False):
+        """Loads a group object from the guilds dict.
+        @param create: if True, a new (unsaved) group object is created for missing data
+        @param ctx: set user, guild and bot from context
+        @param inter: set user, guild and bot from interaction
+        @param guild_id: guild id, required if ctx or inter is not set
+        """
+        if not guild_id:
+            guild_id = ctx.guild.id if ctx else inter.guild.id
+        slug = sanitize(name)
+        print(slug, guild_id)
+        data = guilds.get(guild_id, {}).get(slug, {})
+        print(data)
+        if "slug" in data:
+            data.pop("slug")  # do we want slug as part of dict/field or just key?
+        if not data:
+            if create:
+                return cls(name=name, ctx=ctx, inter=inter, guild=guild_id)
+            raise ValueError(f"Group {name} not found in guild {guild_id}.")
+        return cls(**data, ctx=ctx, inter=inter)
 
-@save_yaml
-def add_self(guild, group, player):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    if guild_groups.get(group):
-        if player not in guild_groups[group][PLAYER]:
-            current_player_number = len(guild_groups[group][PLAYER])
-            maximum_player_number = int(guild_groups[group][PLAYER_NUMBER])
-            if current_player_number < maximum_player_number:
-                guild_groups[group][PLAYER].append(player)
-                return_str = f"Du wurdest Gruppe {group} hinzugefügt.\n"
-                return_str += f"Zum Verlassen `!gleave {group}`"
-                return True, return_str
-            else:
-                return False, f"Gruppe {group} ist bereits voll: {current_player_number}/{maximum_player_number}"
+    @classmethod
+    def groups_from_guild(cls, guild_id: int):
+        """Returns all groups from a guild."""
+        groups_data = guilds.get(guild_id, {})
+        groups = [Group(**data) for data in groups_data.values()]
+        return groups
+
+    async def setup_role(self):
+        guild = self.bot.get_guild(self.guild)
+        if not self.role:
+            role = await guild.create_role(name=self.name)
+            self.role = role.id
         else:
-            return False, f"Du bist bereits Teil der Gruppe {group}."
-    else:
-        return False, f"Gruppe {group} existiert nicht."
+            role = self.ctx.guild.get_role(self.role)
+        if self.ctx:
+            await self.ctx.author.add_roles(role)
+        elif self.inter:
+            await self.inter.user.add_roles(role)
+        for p in self.players:
+            await guild.get_member(p).add_roles(role)
+    
+    @classmethod
+    def groups_of_user(cls, user: Union[abc.User, int], owner: bool = False):
+        """Returns all groups of a user.
+        NOTE: this method would be obsolete for a relational database.
+        """
+        user_id = get_id(user)
+        groups = []
+        for guild_id, guild_data in guilds.items():
+            for group_data in guild_data.values():
+                if not owner and user_id in group_data["players"]:
+                    groups.append(cls(**group_data))
+                elif owner and user_id == group_data["owner"]:
+                    groups.append(cls(**group_data))    
+        return groups
+
+    async def create_channels(self, welcome=True):
+        """Creates channels for the group."""
+        guild: discord.Guild = self.bot.get_guild(
+            self.guild
+        )  # get guild object from id
+        if not guild or not self.role:
+            raise ValueError("Guild and role are required to setup channels.")
+        gm_permissions = {
+            guild.default_role: PermissionOverwrite(read_messages=False),
+            guild.get_member(self.owner): PermissionOverwrite(
+                read_messages=True,
+                manage_channels=True,
+                manage_messages=True,
+                mute_members=True,
+                manage_nicknames=True,
+            ),
+        }
+        permissions = gm_permissions.copy()
+        permissions[guild.get_role(self.role)] = PermissionOverwrite(read_messages=True)
+        category = await guild.create_category(name=self.name, overwrites=permissions)
+        logging.info("Created category: %s", category.id)
+        self.category = category.id  # save category id
+        text = await guild.create_text_channel(
+            name="Text", overwrites=permissions, category=category
+        )
+        self.default_channel = text.id  # maybe set one channel as the one the bot uses?
+        gm = await guild.create_text_channel(
+            name="GM", overwrites=gm_permissions, category=category
+        )
+        await guild.create_voice_channel(
+            name="Voice", overwrites=permissions, category=category
+        )
+        if welcome:
+            await text.send(msg["gcreate_channel_created"].format(author=self.user.id))
+            await gm.send(msg["gcreate_gm_created"].format(author=self.user.id))
+
+    async def setup_guild(self):
+        """Creates and assignes roles/channels permissions for this group."""
+        await self.setup_role()
+        await self.create_channels()
+
+    def __str__(self):
+        """String representation of a group. str(group), print(group)..."""
+        return f"{self.name} ({self.owner})"
+
+    @property
+    def info_message(self):
+        """message content for !ginfo and the like"""
+        return msg["group_info"].format(group=self)
+
+    def info_view(self, user: abc.User = None):
+        """Returns buttons for group details for this group.
+        @param user: user object, required if no ctx or inter is set.
+        """
+        user = user if user else self.user
+        if not user:
+            raise ValueError("User is required to create a group view.")
+        return GroupView(user, self)
+
+    def admin_view(self):
+        """Returns buttons for group admin commands like edit, delete, announce, etc."""
+        return GroupAdminView(self)
+
+    def as_dict(self):
+        """convert object into dict (trivial rn, but could be extended later)
+        NOTE: replace by as_dict(group)?
+        """
+        return asdict(self)
+
+    @save_yaml
+    def save(self):
+        """Saves the group object to the guilds dict."""
+        if not self.slug or not self.guild:
+            raise ValueError("Group needs a guild and a slug to be saved.")
+        guilds.setdefault(self.guild, {})
+        guilds[get_id(self.guild)][self.slug] = self.as_dict()
+
+    @save_yaml
+    async def add_player(self, player: Union[abc.User, int], force=False):
+        """Adds a player to the group."""
+        player_id = get_id(player)
+        if player_id in self.players:
+            return False, msg["gadd_exists"]
+        if self.player_count >= self.max_players and not force:
+            return False, msg["gadd_full"]
+        self.players.append(player_id)
+        answer = msg["gadd_answer"].format(player=player_id, group=self)
+        try:  # try to add role, or mention fail but still return success.
+            guild = self.bot.get_guild(self.guild)
+            role = guild.get_role(self.role)
+            await guild.get_member(player_id).add_roles(role)
+        except Exception as e:
+            logging.error(f"Error adding role {role}: {e}")
+            answer += "\n" + msg["gadd_role_error"]
+        return True, answer
+
+    @save_yaml
+    async def remove_player(self, player: Union[abc.User, int], check_owner=True):
+        """Removes a player from the group.
+        TODO: should we send a info message to the player and/or default channel?
+        """
+        player_id = get_id(player)
+        if check_owner and not self.is_owner(self.user):
+            return False, msg["not_owner"]
+        if not player_id in self.players:
+            return False, msg["gremove_no_player"]
+        self.players.remove(player_id)
+        answer = msg["gremove_answer"].format(player=player_id)
+        try:  # try to remove role, or mention fail but still return success.
+            guild = self.bot.get_guild(self.guild)
+            role = guild.get_role(self.role)
+            await guild.get_member(player_id).remove_roles(role)
+        except Exception as e:
+            logging.error(f"Error removing role {role}: {e}")
+            answer += "\n" + msg["gremove_role_error"]
+        return True, answer
+
+    async def remove_channels(self):
+        """Removes all channels of the group.
+        NOTE: as this function is used to be called from destroy, it is not wrapped
+        by save_yaml. If you call it directly you can follow it by group.save().
+        """
+        guild = self.bot.get_guild(self.guild)
+        category = guild.get_channel(self.category)
+        if not category:
+            logging.error(f"Category {self.category} not found in {guilds[self.guild]}")
+            return
+        for channel in category.channels:
+            if channel:
+                await channel.delete()
+                logging.error(f"Deleted channel {channel.name}.")
+        await category.delete()
+        logging.error(f"Deleted category {category}.")
+
+    @save_yaml
+    async def rename(self, new_name):
+        """Renames the group and updates the slug.
+        Beside just changing group.name this function updates the slug and the key in
+        the data dict, prevents duplicates and renames roles and channels.
+        """
+        logging.debug(f"Renaming group {self.name} to {new_name}.")
+        old_slug = sanitize(self.name)
+        new_slug = sanitize(new_name)
+        if old_slug == new_slug:
+            self.name = new_name
+            self.save()
+            return True, msg["group_renamed"].format(group=self)
+        if new_slug in guilds.get(self.guild, {}):
+            return False, msg["group_exists"]
+        if old_slug not in guilds.get(self.guild, {}):
+            return False, msg["group_not_found"]
+        self.name = new_name
+        self.slug = new_slug
+        del guilds[self.guild][old_slug]  # remove old entry from dict
+        self.save()  # write new name to dict to be saved correctly
+        answer = msg["group_renamed"].format(group=self)
+        guild = self.bot.get_guild(self.guild)
+        try:  # rename category
+            category = guild.get_channel(self.category)
+            await category.edit(name=new_name)
+            category.name = new_name
+        except Exception as e:
+            logging.error(f"Error renaming category {category}: {e}")
+            answer += "\n" + msg["rename_category_error"]
+        try:  # rename role
+            role = guild.get_role(self.role)
+            await role.edit(name=new_name)
+        except Exception as e:
+            logging.error(f"Error renaming role {role}: {e}")
+            answer += "\n" + msg["rename_role_error"]
+        return True, msg["group_renamed"].format(group=self)
+
+    @save_yaml
+    async def destroy(self, user: Union[abc.User, int], cleanup=True, notify=True):
+        """Removes the group and all its data from database.
+        @param user: user object or id of the user who wants to destroy the group
+        @param cleanup: if True, channels and roles are removed as well
+        @param notify: send message to all players, that their group is deleted
+        @return: tuple(bool, str) status, message
+        """
+        if not self.is_owner(user):  # TODO: or admin
+            return False, msg["not_owner"]
+        if not self.exists:
+            return False, msg["group_not_found"]
+        guild = get_id(self.guild)
+        group_data = guilds.get(guild, {}).pop(self.slug)
+        if cleanup:
+            # remove role
+            guild = self.bot.get_guild(self.guild)
+            role = guild.get_role(self.role)
+            # or discord.utils.get(self.guild.roles, name=self.name)
+            if role:
+                await role.delete()
+                logging.debug(f"Deleted role {role}.")
+            # remove channels (category)
+            await self.remove_channels()
+        if notify:
+            for player_id in self.players:
+                member = guild.get_member(player_id)
+                await member.send(
+                    msg["group_deleted_info"].format(author=user, group=self)
+                )
+        return True, msg["gdestroy_info"].format(group=self)
+    
+    def is_member(self, user: Union[abc.User, int]):
+        return get_id(user) in self.players
+
+    def is_owner(self, user: Union[abc.User, int]):
+        return get_id(self.owner) == get_id(user)
+
+    @property
+    def player_count(self):
+        return len(self.players)
+
+    @property
+    def user(self):
+        """this does return command author or button clicker, not the owner
+        NOTE: should be removable when we use /commands with interactions only.
+        """
+        if self.ctx:
+            return self.ctx.author
+        elif self.inter:
+            return self.inter.user
+        return None
+
+    @property
+    def exists(self):
+        return self.slug in guilds.get(self.guild, {})
 
 
-@save_yaml
-def remove_self(guild, group, player):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    if guild_groups.get(group):
-        if player in guild_groups[group][PLAYER]:
-            guild_groups[group][PLAYER].remove(player)
-            return True, f"Du wurdest aus Gruppe {group} entfernt."
+class GroupModal(BaseModal, title="Neue Gruppe"):
+    """Modal for creating or editing a group
+    This popup can only be created from an interaction (i.e. button click or /command),
+    but not from simple !commands. The fields can be set as class variables and the user
+    input will be accessible from the instance as self.<field_name>.value.
+    We init the form with a group object and modify default values to fake an edit mode.
+    When the name changes, the slug changes too. -> Two objects in case of rename.
+    """
+    # this will be added to each instance (self.name...) from parent.
+    name = TextInput(
+        label=msg["name_la"], placeholder=msg["name_ph"], min_length=1, max_length=80
+    )
+    text = TextInput(
+        label=msg["text_la"],
+        placeholder=msg["text_ph"],
+        required=False,
+        max_length=1400,
+        min_length=0,
+        style=discord.TextStyle.long,
+    )
+    max_players = TextInput(
+        label=msg["slots_la"],
+        placeholder=msg["slots_ph"],
+        required=False,
+        min_length=0,
+        max_length=1,
+        default=4,
+    )
+    date = TextInput(
+        label=msg["date_la"],
+        placeholder=msg["date_ph"],
+        required=False,
+        min_length=0,
+        max_length=150,
+    )
+
+    def __init__(self, group=None):
+        self.group = group
+        super().__init__(timeout=460.0)
+        if group:  # modify defaults when editing an existing group
+            self.name.default = group.name
+            self.text.default = group.description
+            self.max_players.default = group.max_players
+            self.date.default = group.date
+
+    async def on_submit(self, inter: Interaction) -> None:
+        # await super().on_submit(interaction)
+        if self.group:  # modify existing group (gedit)
+            group = Group.load(self.group.name, inter=inter)
+            group.description = self.text.value
+            group.max_players = int(self.max_players.value)
+            group.date = self.date.value
+            group.save()
+            if self.name.value != self.group.name:
+                status, answer = await group.rename(self.name.value)
+                if not status:
+                    await inter.response.send_message(answer, ephemeral=True)
+                    return
+            await inter.response.send_message(
+                msg["gedit_success"].format(group=self.group), ephemeral=True
+            )
+            return
+        else:  # create new one (gcreate)
+            group = Group(  # create object from form input
+                owner=inter.user.id,
+                name=self.name.value,
+                description=self.text.value,
+                max_players=int(self.max_players.value),
+                date=self.date.value,
+                inter=inter,
+            )
+            if group.exists:  # TODO: move this check to Group.create()?
+                await inter.response.send_message(
+                    msg["gcreate_group_exists"].format(name=group.name), 
+                    ephemeral=True)
+                return
+            group.save()  # write to yaml
+            await group.setup_guild()  # channels and roles etc..
+            content = msg["gcreate_success"].format(group=group)
+            buttons = group.info_view(inter.user)
+            group.message = await inter.response.send_message(content, view=buttons)
+
+
+class GroupView(BaseView):
+    """Group detail View, providing [join], [leave] buttons
+    This view can be attached to a a group info message and provides buttons.
+    Add it to a message with `ctx.reply(message, view=GroupView(user, group))`.
+    view.user is the user who created the message. 
+    inter.user is the one who clicks the button.
+    """
+
+    def __init__(
+        self, user: discord.User | discord.Member, group: Group, timeout: float = 60.0
+    ):
+        super().__init__(user, timeout=timeout)
+        self.group = group
+
+    @button(label=msg["btn_join"], emoji="🍻", style=ButtonStyle.green)
+    async def join(self, inter: Interaction, button) -> None:
+        if self.group is None:  # should never happen, since group is required now
+            status, answer = False, msg["no_group_set"]
+        elif self.group.is_owner(inter.user):
+            status, answer = False, msg["gjoin_owner"]
         else:
-            return False, f"Du bist kein Spieler der Gruppe {group}."
-    else:
-        return False, f"Gruppe {group} existiert nicht."
+            status, answer = await self.group.add_player(inter.user.id)
+        if self.group.message:
+            await self.group.message.edit(content=self.group.info_message, view=self)
+        await inter.response.send_message(answer, ephemeral=True)
 
 
-@save_yaml
-def add_channel(guild, group, channel):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    if guild_groups.get(group):
-        guild_groups[group][CHANNELS].append(channel)
+class NewGroupView(BaseView):
+    """View for !gcreate command
+    NOTE: not yet implemented.. try with !view. Maybe we can reuse the group_modal
+    """
+
+    @discord.ui.button(label="Gruppe erstellen", style=discord.ButtonStyle.green)
+    async def new(self, inter, button) -> None:
+        group_form = GroupModal()
+        group_form.bot = self.bot
+        await inter.response.send_modal(group_form)
 
 
-@save_yaml
-def remove_channel(guild, group, channel):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    if guild_groups.get(group):
-        guild_groups[group][CHANNELS].remove(channel)
+class GroupAdminView(BaseView):
+    """Buttons for group admin commands like edit, delete, announce, etc."""
+
+    def __init__(self, group: Group, timeout: float = 60.0):
+        super().__init__(group.user, timeout=timeout)
+        self.group = group
+
+    @button(label=msg["btn_edit"], emoji="✏️", style=ButtonStyle.blurple)
+    async def edit(self, inter, button) -> None:
+        group_form = GroupModal(group=self.group)
+        await inter.response.send_modal(group_form)
+
+    @button(label=msg["btn_destroy"], emoji="🗑️", style=ButtonStyle.red)
+    async def destroy(self, inter, button) -> None:
+        """destroy a group from button click
+        TODO: check permissions, maybe confirm dialog?
+        """
+        if not self.group.is_owner(inter.user):
+            await inter.response.send_message(msg["not_owner"], ephemeral=True)
+            return
+        status, answer = await self.group.destroy()
+        await inter.response.send_message(answer, ephemeral=True)
 
 
-def channel_exists(guild, group, channel):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    return guild_groups.get(group) and channel in guild_groups[group][CHANNELS]
 
+class GroupSelect(Select):
+    def __init__(self, user, target):
+        groups = Group.groups_of_user(user, owner=True)
+        # TODO: flatten the group data and remove guild from value
+        options = [discord.SelectOption(label=g.name, value=f"{g.guild};{g.slug}") for g in groups]
+        if len(options) == 0:
+            options = [discord.SelectOption(label="No groups", value="none")]
+        elif len(options) > 25:
+            options = options[:25]
+        self.target = target
+        super().__init__(placeholder="Choose a group...", min_values=1, max_values=1, options=options)
+    
+    async def callback(self, inter: discord.Interaction) -> None:
+        # TODO: flatten the group data and remove guild from value
+        guild_id, slug = inter.data['values'][0].split(";")
+        await inter.response.defer()
+        await inter.followup.send(f"Selected {slug}", ephemeral=True)
+        group = Group.load(slug, inter=inter, guild_id=int(guild_id))
+        content = msg["group_invite"].format(user=inter.user)
+        content += "\n" + group.info_message
+        group.message = await self.target.send(content, view=group.info_view(self.target))
 
-def is_owner(guild, group, author_id):
-    if not groups.get(guild):
-        groups[guild] = {}
-    guild_groups = groups[guild]
-    return guild_groups.get(group) and guild_groups[group][OWNER] == author_id

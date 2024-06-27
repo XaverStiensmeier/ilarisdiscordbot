@@ -32,7 +32,7 @@ args = vars(parser.parse_args())
 logging.info("Config loading with arguments: %s", args)
 
 # create initial settings automatically for first time users
-config_file = args.get('settings', CONFIG/"settings.yml")
+config_file = Path(args.get('settings', CONFIG/"settings.yml"))
 if not config_file.exists():
     ask = f"Settings file {config_file} does not exist. Do you want to create it? (y/n)"
     answer = input(ask)
