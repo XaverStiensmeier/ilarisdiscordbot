@@ -230,9 +230,8 @@ class Group:
         )  # get guild object from id
         if not guild or not self.role:
             raise ValueError("Guild and role are required to setup channels.")
-        permissions = {
+        gm_permissions = {
             guild.default_role: PermissionOverwrite(read_messages=False),
-            guild.get_role(self.role): PermissionOverwrite(read_messages=True),
             guild.get_member(self.owner): PermissionOverwrite(
                 read_messages=True,
                 manage_channels=True,
@@ -241,6 +240,8 @@ class Group:
                 manage_nicknames=True,
             ),
         }
+        permissions = gm_permissions.copy()
+        permissions[guild.get_role(self.role)] = PermissionOverwrite(read_messages=True)
         category = await guild.create_category(name=self.name, overwrites=permissions)
         logging.info("Created category: %s", category.id)
         self.category = category.id  # save category id
@@ -248,11 +249,15 @@ class Group:
             name="Text", overwrites=permissions, category=category
         )
         self.default_channel = text.id  # maybe set one channel as the one the bot uses?
+        gm = await guild.create_text_channel(
+            name="GM", overwrites=gm_permissions, category=category
+        )
         await guild.create_voice_channel(
             name="Voice", overwrites=permissions, category=category
         )
         if welcome:
             await text.send(msg["gcreate_channel_created"].format(author=self.user.id))
+            await gm.send(msg["gcreate_gm_created"].format(author=self.user.id))
 
     async def setup_guild(self):
         """Creates and assignes roles/channels permissions for this group."""

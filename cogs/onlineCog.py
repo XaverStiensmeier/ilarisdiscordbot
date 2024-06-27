@@ -20,17 +20,17 @@ class OnlineCog(commands.Cog):
     @group.command(name="kreatur", description="Findet Kreaturen auf ilaris-online.de")
     async def iocreature(self, inter, suche: str):
         try:
-            kid = int(suche)
+            c_id = int(suche)
         except ValueError:
-            kid = None
+            c_id = None
         api = Client()
-        if not kid:  # search for kreatur by name
+        if not c_id:  # search for kreatur by name
             matches = await api.search_kreatur(suche)
             if len(matches) == 0:
                 await inter.response.send_message("Hab leider nichts gefunden.", ephemeral=True)
                 return
             if len(matches) == 1:
-                kid = matches[0]["id"]
+                c_id = matches[0]["id"]
             elif len(matches) > 1:
                 view = KreaturSelect(inter, matches).as_view()
                 await inter.response.send_message(
@@ -40,7 +40,7 @@ class OnlineCog(commands.Cog):
                 )
                 return
         # answer kreatur by id
-        data = await api.get(f"ilaris/kreatur/{kid}")
+        data = await api.get(f"ilaris/kreatur/{c_id}")
         embed = kreatur_embed(data)
         await inter.response.send_message("", embed=embed)
         return

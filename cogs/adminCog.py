@@ -8,6 +8,7 @@ from cogs.group import organize_group as og
 from config import DATA, settings, messages as msg
 from functools import wraps
 from views.base import BaseModal
+from cogs.group.organize_group import Group
 
 
 def devs_only(func):
@@ -94,16 +95,13 @@ class AdminCog(commands.Cog):
     async def bug(self, inter):
         await inter.response.send_modal(BugForm())
 
-    # NOTE: decorator example for only allowing command to be run in guilds (not dms)
-    # @app_commands.guild_only()  # can also be used as class decorator for groups 
-    # async def gadd(self, ctx, group: str, player: discord.Member):
-    #     group = Group.load(group, ctx=ctx)
-    #     await group.add_player(player.id)
-    #     await ctx.reply(f"Added <@{player.id}> to {group.name}")
+    @app_commands.guild_only()  # can also be used as class decorator for groups 
+    @group.command(name="gadd", description="Add player to a group")
+    async def gadd(self, inter, group: str, player: discord.Member):
+        group = Group.load(group, inter=inter)
+        await group.add_player(player.id)
+        await inter.response.send_message(f"Added <@{player.id}> to {group.name}")
         
-
-    # # TODO: should be admin command:
-    # @command()
 
 class BugForm(BaseModal):
     title = TextInput(

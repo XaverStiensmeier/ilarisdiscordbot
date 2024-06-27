@@ -32,16 +32,31 @@ def kreatur_embed(data, as_view=False):
         )
         embed.set_thumbnail(url=f"https://ilaris-online.de/static/bilder/kreaturen/{data['typ']}.png")
         # EIGENSCHAFTEN
-        # eigs = []
-        # for e in data.get("eigenschaften", []):
-        #     eig_str = e["name"]
-        #     eig_str += f' ({cap(e["text"], 150)})' if e["text"] else ""
-        #     eigs.append(eig_str)
         # NOTE: some eigs. have a lot of text.. we should shorten them or just show names
         eigs = [e["name"] for e in data.get("eigenschaften", []) if e["kategorie"] != "Info"]
         eigs = cap(", ".join(eigs))  # discord limit for items is 1024 chars
         if eigs:
             embed.add_field(name="Eigenschaften", value=eigs, inline=False)
+        # WERTE (kampf + attribute + energien in one field)
+        kws = []
+        for key, val in data.get("kampfwerte", {}).items():
+            if not val or "label" in key:
+                continue
+            if key == "GST":
+                kws.append(f'`GS {data["kampfwerte"]["GST_label"]}: {val}`')
+            if key == "GSS":
+                kws.append(f'`GS {data["kampfwerte"]["GSS_label"]}: {val}`')
+            else:
+                kws.append(f"`{key}: {val}`")
+        for e in ["asp", "gup", "kap"]:
+            if data.get(e):
+                kws.append(f"`{e.upper()}: {data[e]}`")
+        kws = cap(" ".join(kws))
+        attrs = [f"`{k}: {v}`" for k, v in data.get("attribute", {}).items() if v]
+        attrs = cap(" ".join(attrs))
+        ka_values = "\n".join([kws, attrs])
+        if kws or attrs:
+            embed.add_field(name="Werte", value=ka_values, inline=False)
         # ANGRIFFE
         angs = []
         for a in data.get("angriffe", []):
@@ -55,7 +70,22 @@ def kreatur_embed(data, as_view=False):
             angs.append(ang_str)
         angs_str = cap("\n".join(angs))
         embed.add_field(name="Angriffe", value=angs_str, inline=False)
-        # INFOS
+        # FERTIGKEITEN
+        ferts = [f'{t["name"]} `{t["wert"]}`' for t in data.get("freietalente", [])]
+        ferts = cap(", ".join(ferts))
+        if ferts:
+            embed.add_field(name="Fertigkeiten", value=ferts, inline=False)
+        # ZAUBER
+        zfs = []
+        for zf in data.get("zauberfertigkeiten", []):
+            zf_str = f'{zf["name"]} `{zf["wert"]}`: '
+            zaubs = ", ".join([z["name"] for z in zf.get("zaubers", [])])
+            zf_str += zaubs
+            zfs.append(zf_str)
+        zfs = cap("\n".join(zfs))
+        if zfs:
+            embed.add_field(name="Übernatürliches", value=zfs, inline=False)
+        # INFOS (one field per info)
         for info in data.get("eigenschaften", []):
             if info["kategorie"] != "Info":
                 continue

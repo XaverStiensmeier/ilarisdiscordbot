@@ -9,21 +9,25 @@ class Client:
     more features like authentication, searching, caching etc..
     """
     def __init__(self):
-        print("init")
         self.base_url = "https://ilaris-online.de/api/"
         self.headers = {
             "Content-Type": "application/json",
         }
         self.session = aiohttp.ClientSession()
     
+    def ensure_session(self):
+        """Creates new session if none is open anymore"""
+        if self.session is None or self.session.closed:
+            self.session = aiohttp.ClientSession()
+
     async def auto_close(self, close):
         """Call on end of each request to make closing sessions more convenient."""
-        if close:
+        if close and not self.session.closed:
             await self.session.close()
     
     async def get(self, endpoint, close=True):
         """GET request to the API."""
-        print("get", endpoint)
+        self.ensure_session()
         url = f"{self.base_url}/{endpoint}"
         async with self.session.get(url, headers=self.headers) as response:
             if response.status != 200:
@@ -37,6 +41,7 @@ class Client:
         """Uses api search (name and desc). returns list of matches from database.
         # TODO: create a custom api view with only name/id to save some traffic
         """
+        self.ensure_session()
         data = await self.get(f"ilaris/kreatur/?search={search}")
         short_data = [{"id": data["id"], "name": data["name"]} for data in data]
         return short_data

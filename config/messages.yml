@@ -42,6 +42,7 @@ gcreate_group: "Your group to create"
 gcreate_time: "Time to play in GMT+1 (for example '24.02.24 14:00')"
 gcreate_maxplayers: "Maximum number of players"
 gcreate_channel_created: "Hey, <@{author}>! I created this channel for you and your group."
+gcreate_gm_created: "Hey, <@{author}>! I created this this channel only for you. None of your players can see it (unless they are admins) you can use it to roll privately, take notes or ask me for secret info like statblocks."
 gcreate_group_exists: "You already have a group called {name}..."
 gcreate_bad_args: >
   Pass at least the name of the group (in double quotes) to the command: 
