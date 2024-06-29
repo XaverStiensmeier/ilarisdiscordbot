@@ -28,8 +28,16 @@ parser.add_argument("--token",
 parser.add_argument("--settings",
     help="Path to a settings file",
     default=CONFIG/"settings.yml")
+parser.add_argument("--datapath",
+    help="Path to the data directory (relative to the project root)",                
+    default=DATA,
+    )
 args = vars(parser.parse_args())
 logging.info("Config loading with arguments: %s", args)
+if not Path(args['datapath']).is_absolute():
+    DATA = ROOT/args["datapath"]
+if not DATA.exists():
+    DATA.mkdir(parents=True)
 
 # create initial settings automatically for first time users
 config_file = Path(args.get('settings', CONFIG/"settings.yml"))
