@@ -20,7 +20,6 @@ from discord import abc  # discords base classes
 from discord import (
     Interaction,
     PermissionOverwrite,
-    Interaction,
     ButtonStyle,
     Client,
 )

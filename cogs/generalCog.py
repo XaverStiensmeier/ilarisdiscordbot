@@ -3,12 +3,14 @@ import os
 
 import discord
 from discord.ext import commands
+from discord import app_commands
 
 from config import RESOURCES
 from config import messages as msg
 from cogs.general import differ
 from cogs.general import ilaris_database
 from cogs.general import parse_die
+from ui.views import HpButtons
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(RESOURCES/"manoeverkarten")]
 NAMED_ROLLS = [  # TODO: should this be part of settings?
@@ -69,6 +71,13 @@ class GeneralCommands(commands.Cog):
                 await ctx.reply(msg["card_best_matches"].format(best=three_best))
         else:
             await ctx.reply(msg["card_not_found"])
+    
+    @app_commands.command(name="hp", description="Health Points")
+    async def hp(self, inter, name: str="Healthbar"):
+        buttons = HpButtons(name)
+        embed = buttons.embed()
+        await inter.response.send_message(embed=embed, view=buttons, ephemeral=False)
+
     
     @commands.command(help=msg["r_help"], aliases=['w'])
     async def r(self, ctx, 
