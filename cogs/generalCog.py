@@ -3,24 +3,30 @@ import os
 
 import discord
 from discord.ext import commands
+from discord import app_commands
 
 from config import RESOURCES
 from config import messages as msg
-from cogs.general import differ
-from cogs.general import ilaris_database
-from cogs.general import parse_die
+from cogs.general import differ, ilaris_database, parse_die
+from cogs.general.hpcounter import HpButtons
+
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(RESOURCES/"manoeverkarten")]
-NAMED_ROLLS = [
+NAMED_ROLLS = [  # TODO: should this be part of settings?
     ("IIIoo", "2@5d20"), ("IIIo", "2@4d20"), ("Ioo", "1@3d20"), 
     ("Io", "1@2d20"), ("ooIII", "4@5d20"), ("oIII", "3@4d20"), 
     ("ooI", "3@3d20"), ("oI", "2@2d20"), ("III", "2@3d20"), ("I", "1d20")
-]
+] # TODO: should we make them case insensitive?
+
+
+def emojify_number(num):
+    s = str(num)
+    emos = ["0️⃣", "1️⃣", " 2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
+    return "".join([emos[int(i)] for i in s])
 
 
 class GeneralCommands(commands.Cog):
-    """
-    Commands for handling general stuff
+    """Commands for handling general stuff
     """
 
     def __init__(self, bot):
@@ -45,7 +51,7 @@ class GeneralCommands(commands.Cog):
                 await ctx.reply(msg["page_limit"])
         else:
             await ctx.reply(ilaris_database.get_database_entry(name=arg))
-
+    
     @commands.command(help=msg["card_help"], aliases=['karte'])
     async def card(self, ctx, arg: str = commands.parameter(description=msg["card_desc"])):
         name, three_best = differ.closest_match(arg, cards)
@@ -64,28 +70,68 @@ class GeneralCommands(commands.Cog):
                 await ctx.reply(msg["card_best_matches"].format(best=three_best))
         else:
             await ctx.reply(msg["card_not_found"])
+    
+    @app_commands.command(name="hp", description="Health Points")
+    async def hp(self, inter, name: str="Healthbar"):
+        buttons = HpButtons(name, inter.user)
+        embed = buttons.embed()
+        await inter.response.send_message(embed=embed, view=buttons, ephemeral=False)
 
+    
     @commands.command(help=msg["r_help"], aliases=['w'])
-    async def r(self, ctx, roll: str = commands.parameter(default="III", description=msg["r_desc"]),
-                identifier: str = commands.parameter(default="", description="Identifier.")):
+    async def r(self, ctx, 
+            roll: str = commands.parameter(default="III", description=msg["r_desc"]),
+            identifier: str = commands.parameter(default="", description="Identifier."),
+            difficulty: int = commands.parameter(default=None, description="Difficulty.")
+        ):
+        original = ctx.message.content
         roll = roll.replace(" ", "")
         for key, value in NAMED_ROLLS:
             roll = roll.replace(key, value)
-        total_result_str, total_result = parse_die.parse_roll(roll)
-        total_result = msg["r_result"].format(
-            author=ctx.author.display_name,
-            identifier=identifier,
-            result=total_result,
-            details=total_result_str
-        )
+        content, total_result, img = parse_die.parse_roll(roll)
+        # total_result_text = msg["r_result"].format(
+        #     author=ctx.author.display_name,
+        #     identifier=identifier,
+        #     result=total_result,
+        #     details=total_result_str
+        # )
         await ctx.message.delete()
-        response = await ctx.send(total_result)
+        # allow passing only difficulty (as first arg)
+        if not difficulty:
+            try:
+                difficulty = int(identifier)
+                identifier = ""
+            except ValueError:
+                pass
+        title = identifier if identifier else "Erfolgswert"
+        # emo_num = emojify_number(total_result)
+        title = f"🎲 {identifier if identifier else msg['r_title']} {total_result}"
+        # TODO: remove this.. we only want colors for given difficulty
+        # ew1, ew2 = 12, 16  # should this be part of settings (ew1, ew2)?
+        # if difficulty is not None:
+        #     ew1, ew2 = difficulty, difficulty
+        # if total_result >= ew2:
+        #     color = discord.Color.green()
+        # elif total_result >= ew1:  # never happens for given difficulty
+        #     color = discord.Color.gold()
+        # else:
+        #     color = discord.Color.red()
+        # content = f"{ctx.author.display_name}: {total_result_str}"
+        color = None
+        if difficulty is not None:
+            if total_result < difficulty:
+                color = discord.Color.red()
+                content += f"\n\n🚫 {msg['r_fail']}"
+            else:
+                color = discord.Color.green()
+                content += f"\n\n✅ {msg['r_success']}"
+            content += f" ({msg['r_difficulty']}: {difficulty})"
+        embed = discord.Embed(title=title, description=content, color=color)
+        img_url = f"https://ilaris-online.de/static/bilder/d20s/default.png"
+        if img is not None:
+            # pick d20 img
+            img_url = f"https://ilaris-online.de/static/bilder/d20s/{img}.png"
+        embed.set_thumbnail(url=img_url)
+        response = await ctx.send(f"<@{ctx.author.id}>: {ctx.message.content}", embed=embed)
         # await response.delete(delay=300)
         await response.add_reaction("❌")
-
-    # TODO: allow sending files only for specific user ids
-    # @commands.command(help="Admin only: Gets debug information", hidden=True)
-    # @commands.has_permissions(administrator=True)
-    # async def what(self, ctx):
-    #     await ctx.author.send(file=discord.File(bp.djoin("discord.log")))
-    #     await ctx.author.send(file=discord.File(bp.djoin("groups.yml")))

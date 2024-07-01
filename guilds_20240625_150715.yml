@@ -1,0 +1,91 @@
+1240434028213960804:
+  der:
+    category: 1254743364822106143
+    channel: null
+    date: Name
+    description: An exciting Ilaris session!
+    guild: 1240434028213960804
+    max_players: 2
+    name: Der
+    owner: 299264338731204609
+    players: []
+    role: 1254743362590998548
+  der-name:
+    category: null
+    channel: null
+    date: ''
+    description: ''
+    guild: 1240434028213960804
+    max_players: 4
+    name: Der Name
+    owner: 299264338731204609
+    players: []
+    role: null
+  der-name-2:
+    category: 1254743505050275922
+    channel: null
+    date: ''
+    description: An exciting Ilaris session!
+    guild: 1240434028213960804
+    max_players: 4
+    name: Der Name 2
+    owner: 299264338731204609
+    players: []
+    role: 1254743502814842891
+  der-name-3:
+    category: null
+    channel: null
+    date: ''
+    description: ''
+    guild: 1240434028213960804
+    max_players: 4
+    name: Der Name 3
+    owner: 299264338731204609
+    players: []
+    role: null
+  der-name-4:
+    category: null
+    channel: null
+    date: ''
+    description: ''
+    guild: 1240434028213960804
+    max_players: 4
+    name: Der Name 4
+    owner: 299264338731204609
+    players: []
+    role: null
+  gruppo:
+    category: 1253097655027110060
+    channel: null
+    date: ''
+    description: An exciting Ilaris session!
+    guild: 1240434028213960804
+    max_players: 4
+    name: Gruppo Neu
+    owner: 299264338731204609
+    players:
+    - 299264338731204609
+    role: 1253097652845805578
+  hacki-neu:
+    category: 1252613488828874813
+    channel: null
+    date: ''
+    description: An exciting Ilaris session!
+    guild: 1240434028213960804
+    max_players: 4
+    name: hacki neu
+    owner: 29926433873120460
+    players:
+    - 299264338731204609
+    role: 1252613486954025043
+  testit-ganz-neu:
+    category: 1253094273125974117
+    channel: null
+    date: ''
+    description: An exciting Ilaris session!
+    guild: 1240434028213960804
+    max_players: 4
+    name: testit ganz neu
+    owner: 299264338731204609
+    players: []
+    role: 1253094270827757589

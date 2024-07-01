@@ -108,7 +108,21 @@ you can stop the bot with
 docker compose down
 ```
 
-## Test the bot
+## How to dev
+Contribute code by creating a PR to the dev branch. Reviewed code will be merged to dev.
+After collecting a couple of features and some local test runs, it may be merged to main
+and deployed. 
+
+### Run locally in a dev environment
+You can start the bot with extra settings and datapaths, if you not want to mess up your
+actual data or settings. Using a seperate settings file and a dev subfolder in the data
+folder (for seperate data and log files) run:
+```sh
+python ilaris_bot.py --settings config/settings_dev.yml --datapath data/dev
+```
+Missing folders and files are created automatically.
+
+### Test the bot
 There are a few tests in the `tests` folder that can be run with: 
 ```sh
 pytest
