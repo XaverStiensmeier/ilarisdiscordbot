@@ -3,7 +3,9 @@ from discord.ui import TextInput, View, Select, button
 from cogs.ilarisonline.api import Client
 from utility.sanitizer import cap
 from config import messages as msg
-
+from cogs.db import Hpcounter
+import logging
+log = logging.getLogger(__name__)
 
 
 class ItemSelect(Select):
@@ -20,18 +22,18 @@ class ItemSelect(Select):
 
 class HpButtons(View):
 
-    def __init__(self, name):
+    def __init__(self, name, user):
         super().__init__(timeout=None)
-        self.name = name
-        self.wounds = 0
-        self.user = None
+        self.data, new = Hpcounter.get_or_create(name=name, owner=user.id)
+        if new:
+            log.info(f"New Hpcounter '{name}' created by {user}")
 
     def embed(self):
-        bar = self.wounds * "❌"
-        text = f"{self.wounds} Wunden\n{bar}"
-        if self.wounds > 2:
-            text += f"\nProben: -{(self.wounds-2)*2}"
-        return Embed(title=self.name, description=text)
+        bar = self.data.wounds * "❌" + (9-self.data.wounds) * "✖️"
+        text = f"{self.data.wounds} Wunden\n{bar}"
+        if self.data.wounds > 2:
+            text += f"\nProben: -{(self.data.wounds-2)*2}"
+        return Embed(title=self.data.name, description=text)
 
     async def update(self, inter: Interaction):
         embed = self.embed()
@@ -39,15 +41,19 @@ class HpButtons(View):
         
     @button(label="+1", emoji="❌")
     async def join(self, inter: Interaction, button) -> None:
-        self.wounds += 1 if self.wounds < 9 else 0
+        self.data.wounds += 1 if self.data.wounds < 9 else 0
+        self.data.save()
         await self.update(inter)
 
     @button(label="-1", emoji="💚")
     async def reduce(self, inter: Interaction, button) -> None:
-        self.wounds -=1 if self.wounds > 0 else 0
+        self.data.wounds -=1 if self.data.wounds > 0 else 0
+        self.data.save()
         await self.update(inter)
     
     @button(label="", emoji="🗑️")
     async def reset(self, inter: Interaction, button) -> None:
+        # self.data.wounds = 0
+        self.data.delete_instance()
         await inter.response.defer()
         await inter.delete_original_response()

@@ -74,7 +74,7 @@ class GeneralCommands(commands.Cog):
     
     @app_commands.command(name="hp", description="Health Points")
     async def hp(self, inter, name: str="Healthbar"):
-        buttons = HpButtons(name)
+        buttons = HpButtons(name, inter.user)
         embed = buttons.embed()
         await inter.response.send_message(embed=embed, view=buttons, ephemeral=False)
 

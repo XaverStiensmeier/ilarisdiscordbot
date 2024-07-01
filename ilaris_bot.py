@@ -10,7 +10,7 @@ import config
 from config import DATA
 from config import messages as msg
 from cogs.generalCog import GeneralCommands
-from cogs.group.organize_group import GroupSelect
+from cogs.group.organize_group import GroupSelect, Group
 from cogs.groupsCog import GroupCommands
 from cogs.adminCog import AdminCog
 from cogs.onlineCog import OnlineCog
@@ -94,15 +94,18 @@ async def on_command_error(ctx, error):
 @bot.event
 async def on_command_completion(ctx):
     if ctx.guild:
-        msg = "'{author}' used '{message.content}' on '{guild.name}' in '{channel}'"
-        log.info(msg.format(**ctx))
+        msg = "'{}' used '{}' on '{}' in '{}'"
+        log.info(
+            msg.format(ctx.author, ctx.message.content, ctx.guild.name, ctx.channel.name)
+        )
     if (ctx.command.cog_name == "GroupCommands" 
         and ctx.command.name not in NO_UPDATE_COMMAND_LIST):
         channel = discord.utils.get(ctx.guild.text_channels,
             name=config.settings.get("groups_channel"))
         if channel:
+            # TODO: move this "info channel" update to groups and add a function to set it
             await channel.purge()
-            for result_str in organize_group.list_groups(sanitize(ctx.guild.name)):
+            for result_str in Group.groups_from_guild(ctx.guild.id):
                 await channel.send(result_str)
         else:
             log.info("No group channel found.")
@@ -120,8 +123,8 @@ async def on_reaction_add(reaction, user):
         await reaction.message.delete()
 
 
-async def setup_hook() -> None:  # This function is automatically called before the bot starts
-    await bot.tree.sync()   # This function is used to sync the slash commands with Discord it is mandatory if you want to use slash commands
+async def setup_hook() -> None:  # automatically called before the bot starts
+    await bot.tree.sync()   # sync slash cmds with Discord mandatory for slash commands
 
 
 # NOTE: no app command to manually resync app commands
