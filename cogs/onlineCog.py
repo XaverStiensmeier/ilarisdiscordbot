@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.ui import View
 from config import DATA, settings, messages as msg
 from cogs.ilarisonline.api import Client
-from ui.views import ItemSelect
+from utility.views import ItemSelect
 from utility.sanitizer import cap
 
 

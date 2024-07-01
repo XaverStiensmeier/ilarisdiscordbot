@@ -7,10 +7,9 @@ from discord import app_commands
 
 from config import RESOURCES
 from config import messages as msg
-from cogs.general import differ
-from cogs.general import ilaris_database
-from cogs.general import parse_die
-from ui.views import HpButtons
+from cogs.general import differ, ilaris_database, parse_die
+from cogs.general.hpcounter import HpButtons
+
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(RESOURCES/"manoeverkarten")]
 NAMED_ROLLS = [  # TODO: should this be part of settings?
