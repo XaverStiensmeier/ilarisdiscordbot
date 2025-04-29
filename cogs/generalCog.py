@@ -54,7 +54,7 @@ class GeneralCommands(commands.Cog):
                 await ctx.reply(msg["page_limit"])
         else:
             await ctx.reply(ilaris_database.get_database_entry(name=arg))
-
+    
     @commands.command(help=msg["card_help"], aliases=['karte'])
     async def card(self, ctx, arg: str = commands.parameter(description=msg["card_desc"])):
         name, three_best = differ.closest_match(arg, cards)
@@ -131,10 +131,3 @@ class GeneralCommands(commands.Cog):
         response = await ctx.send(f"<@{ctx.author.id}>: {ctx.message.content}", embed=embed)
         # await response.delete(delay=300)
         await response.add_reaction("❌")
-
-    # TODO: allow sending files only for specific user ids
-    # @commands.command(help="Admin only: Gets debug information", hidden=True)
-    # @commands.has_permissions(administrator=True)
-    # async def what(self, ctx):
-    #     await ctx.author.send(file=discord.File(bp.djoin("discord.log")))
-    #     await ctx.author.send(file=discord.File(bp.djoin("groups.yml")))
