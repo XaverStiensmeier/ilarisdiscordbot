@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 
 import discord
 from discord.ext import commands
@@ -9,6 +10,8 @@ from config import messages as msg
 from cogs.general import differ
 from cogs.general import ilaris_database
 from cogs.general import parse_die
+from cogs.general import hit_zone
+from views.hit_zone import HitZoneView
 
 cards = [os.path.splitext(filename)[0] for filename in os.listdir(RESOURCES/"manoeverkarten")]
 NAMED_ROLLS = [  # TODO: should this be part of settings?
@@ -16,6 +19,29 @@ NAMED_ROLLS = [  # TODO: should this be part of settings?
     ("Io", "1@2d20"), ("ooIII", "4@5d20"), ("oIII", "3@4d20"), 
     ("ooI", "3@3d20"), ("oI", "2@2d20"), ("III", "2@3d20"), ("I", "1d20")
 ] # TODO: should we make them case insensitive?
+
+
+def roll_dice(roll):
+    """Expands named rolls and rolls the dice. Returns (details, result, d20)."""
+    roll = roll.replace(" ", "")
+    for key, value in NAMED_ROLLS:
+        roll = roll.replace(key, value)
+    return parse_die.parse_roll(roll)
+
+
+def is_plain_dice_roll(roll):
+    """True for plain dice like 2w6+3, False for named rolls (I, III, ...) and @ rolls."""
+    roll = roll.replace(" ", "")
+    if "@" in roll or any(key in roll for key, _ in NAMED_ROLLS):
+        return False
+    return re.search(r"\d*[dw]\d+", roll, re.IGNORECASE) is not None
+
+
+def dice_thumbnail(img):
+    """URL of the d20 image for the given result (or the default image)."""
+    if img is None:
+        img = "default"
+    return f"https://ilaris-online.de/static/bilder/d20s/{img}.png"
 
 
 def emojify_number(num):
@@ -81,10 +107,7 @@ class GeneralCommands(commands.Cog):
             difficulty: int = commands.parameter(default=None, description="Difficulty.")
         ):
         original = ctx.message.content
-        roll = roll.replace(" ", "")
-        for key, value in NAMED_ROLLS:
-            roll = roll.replace(key, value)
-        content, total_result, img = parse_die.parse_roll(roll)
+        content, total_result, img = roll_dice(roll)
         # total_result_text = msg["r_result"].format(
         #     author=ctx.author.display_name,
         #     identifier=identifier,
@@ -123,13 +146,27 @@ class GeneralCommands(commands.Cog):
                 content += f"\n\n✅ {msg['r_success']}"
             content += f" ({msg['r_difficulty']}: {difficulty})"
         embed = discord.Embed(title=title, description=content, color=color)
-        img_url = f"https://ilaris-online.de/static/bilder/d20s/default.png"
-        if img is not None:
-            # pick d20 img
-            img_url = f"https://ilaris-online.de/static/bilder/d20s/{img}.png"
-        embed.set_thumbnail(url=img_url)
-        response = await ctx.send(f"<@{ctx.author.id}>: {ctx.message.content}", embed=embed)
+        embed.set_thumbnail(url=dice_thumbnail(img))
+        # hit zones only make sense for damage, so no button for checks (I, III, @)
+        view = HitZoneView(ctx.author, embed) if is_plain_dice_roll(roll) else None
+        response = await ctx.send(f"<@{ctx.author.id}>: {ctx.message.content}", embed=embed, view=view)
+        if view:
+            view.message = response
         # await response.delete(delay=300)
+        await response.add_reaction("❌")
+
+    @commands.command(help=msg["tp_help"], aliases=["schaden", "dmg"])
+    async def tp(self, ctx,
+            roll: str = commands.parameter(description=msg["tp_desc"]),
+            identifier: str = commands.parameter(default="", description=msg["tp_identifier"])
+        ):
+        content, total_result, img = roll_dice(roll)
+        await ctx.message.delete()
+        title = f"⚔️ {identifier if identifier else msg['tp_title']} {total_result} TP"
+        embed = discord.Embed(title=title, description=content)
+        hit_zone.add_hit_zone_fields(embed, *hit_zone.roll_hit_zone())
+        embed.set_thumbnail(url=dice_thumbnail(img))
+        response = await ctx.send(f"<@{ctx.author.id}>: {ctx.message.content}", embed=embed)
         await response.add_reaction("❌")
 
     # TODO: allow sending files only for specific user ids

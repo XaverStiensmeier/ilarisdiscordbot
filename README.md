@@ -12,6 +12,10 @@ to see it in action. You can also [host the bot yourself](#how-to-host).
   - `!ilaris`        Posts an image of the given page if argument is numeric. Else...
   - `!r`             Rolls a die. Special named throws: {"I": "1d20", "III": "3d20", "I+": "1@2d20", "I++": "1@3d20", "III+": "2@4d20", "III++": "2@5d20",
                        "+": "2@4d20", "++": "2@5d20"}
+  - `!tp`            Rolls damage plus 1d6 for the hit zone (optional rule Trefferzonen, p. 33).
+                     Aliases: `!schaden`, `!dmg`
+  - 🎯 button       Plain `!r` dice rolls (e.g. `2d6+3`, not `I`, `III` or `@`) get a "roll hit zone" button that adds the hit zone
+                     (1d6) to the result. Only the roller can use it, once, within 10 minutes.
 ### GroupCommands
   - `!gcreate`       Creates a new group with yourself as the GM
   - `!gdestroy`      Destroys a group that you've created

@@ -23,6 +23,10 @@ r_help: |
   Spezielle Würfe:
   I: 1d20, Io: 1@2d20, Ioo 1@3d20
   III: 2@3d20, III': 2@4d20, III'' 2@5d20
+  Trefferzonen (Optionalregel, S. 33):
+  !tp 2w6+3: Würfelt Schaden und 1W6 für die Trefferzone, siehe !help tp.
+  🎯 Button unter normalen Würfen (z.B. 2w6+3, nicht bei I, III oder @): Würfelt 1W6 für die Trefferzone und ergänzt das Ergebnis.
+  Nur wer gewürfelt hat kann ihn drücken, einmal pro Wurf, innerhalb von 10 Minuten.
 r_desc: "Zeichenkette zum Parsen der Würfel."
 r_result: |
   ```md
@@ -33,6 +37,28 @@ r_title: "Ergebnis"
 r_success: "Erfolg"
 r_fail: "Fehlschlag"
 r_difficulty: "Schwierigkeit"
+
+tp_help: |
+  Würfelt Schaden (TP) und zusätzlich 1W6 für die Trefferzone (Optionalregel Trefferzonen, S. 33).
+  Beispiel: !tp 2w6+3 Säbel
+  Die TP vergleichst du mit der Zonen-Wundschwelle (ZWS*) der getroffenen Zone.
+  Trefferzonen (W6): 1 Beine, 2 Schildarm, 3 Schwertarm, 4 Bauch, 5 Brust, 6 Kopf
+  Aliase: !schaden, !dmg
+tp_desc: "Schadenswurf, z.B. 2w6+3"
+tp_identifier: "Name des Angriffs/der Waffe (optional)"
+tp_title: "Schaden"
+
+hit_zone_title: "Trefferzone"
+hit_zone_die: "W6"
+hit_zone_pain: "Wundschmerz"
+hit_zone_button: "Trefferzone würfeln"
+hit_zones:
+  1: {emoji: "🦵", name: "Beine", check: "GE", effect: "Sturz – das Opfer stürzt und liegt am Boden."}
+  2: {emoji: "🛡️", name: "Schildarm", check: "KK", effect: "Entwaffnet – die Waffe dieser Hand fällt zu Boden."}
+  3: {emoji: "🗡️", name: "Schwertarm", check: "KK", effect: "Entwaffnet – die Waffe dieser Hand fällt zu Boden."}
+  4: {emoji: "🫘", name: "Bauch", check: "KO", effect: "Organtreffer – das Opfer erleidet eine Zusatzwunde."}
+  5: {emoji: "🫁", name: "Brust", check: "KO", effect: "Organtreffer – das Opfer erleidet eine Zusatzwunde."}
+  6: {emoji: "🧠", name: "Kopf", check: "MU", effect: "Betäubt – wie Wundschmerz in den Basisregeln (S. 31)."}
 
 group_prefix: "Deine Gruppe (ohne Benutzername)"
 

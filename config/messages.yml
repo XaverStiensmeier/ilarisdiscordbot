@@ -22,6 +22,10 @@ r_help: |
   Special rolls:
   I: 1d20, Io: 1@2d20, Ioo 1@3d20
   III: 2@3d20, III': 2@4d20, III'' 2@5d20
+  Hit zones (optional rule Trefferzonen, p. 33):
+  !tp 2d6+3: Rolls damage and 1d6 for the hit zone, see !help tp.
+  🎯 button below plain dice rolls (e.g. 2d6+3, not for I, III or @): Rolls 1d6 for the hit zone and adds it to the result.
+  Only the person who rolled can press it, once per roll, within 10 minutes.
 r_desc: "Dice string to parse."
 r_result: |
   ```md
@@ -32,6 +36,28 @@ r_title: "Result"
 r_success: "Success"
 r_fail: "Fail"
 r_difficulty: "difficulty"
+
+tp_help: |
+  Rolls damage (TP) plus 1d6 for the hit zone (optional rule Trefferzonen, p. 33).
+  Example: !tp 2d6+3 Sabre
+  Compare the TP with the zone wound threshold (ZWS*) of the zone that was hit.
+  Hit zones (d6): 1 legs, 2 shield arm, 3 sword arm, 4 belly, 5 chest, 6 head
+  Aliases: !schaden, !dmg
+tp_desc: "Damage roll, for example 2d6+3"
+tp_identifier: "Name of the attack/weapon (optional)"
+tp_title: "Damage"
+
+hit_zone_title: "Hit zone"
+hit_zone_die: "d6"
+hit_zone_pain: "Wound pain"
+hit_zone_button: "Roll hit zone"
+hit_zones:
+  1: {emoji: "🦵", name: "Legs", check: "GE", effect: "Fall – the target falls and lies on the ground."}
+  2: {emoji: "🛡️", name: "Shield arm", check: "KK", effect: "Disarmed – the weapon in this hand falls to the ground."}
+  3: {emoji: "🗡️", name: "Sword arm", check: "KK", effect: "Disarmed – the weapon in this hand falls to the ground."}
+  4: {emoji: "🫘", name: "Belly", check: "KO", effect: "Organ hit – the target suffers an additional wound."}
+  5: {emoji: "🫁", name: "Chest", check: "KO", effect: "Organ hit – the target suffers an additional wound."}
+  6: {emoji: "🧠", name: "Head", check: "MU", effect: "Stunned – like wound pain in the basic rules (p. 31)."}
 
 group_prefix: "Your group (without username)"
 group_name: "Name of your group."
